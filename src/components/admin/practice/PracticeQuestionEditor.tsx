@@ -332,6 +332,8 @@ export const PracticeQuestionEditor = ({
                    onChange={(value) => onUpdate(index, 'explanation', value)}
                    placeholder="Giải thích đáp án đúng..."
                    miniMinHeight="60px"
+                   showImageUpload={!!onImageUpload}
+                   onImageUpload={onImageUpload ? async (file: File) => onImageUpload(file, index, 'explanation_image') : undefined}
                  />
               </div>
             </div>

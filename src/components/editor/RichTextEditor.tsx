@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Bold,
   Italic,
@@ -39,6 +40,8 @@ import {
   Palette,
   Upload,
   Loader2,
+  X,
+  ImagePlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -132,10 +135,14 @@ export const RichTextEditor = ({
   onImageUpload,
 }: RichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadFileInputRef = useRef<HTMLInputElement>(null);
   const [linkUrl, setLinkUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadDragOver, setUploadDragOver] = useState(false);
 
   const htmlValue = content ?? value ?? "";
 
@@ -168,43 +175,88 @@ export const RichTextEditor = ({
     if (imageUrl) {
       execCommand("insertImage", imageUrl);
       setImageUrl("");
+      setImagePopoverOpen(false);
     }
   }, [imageUrl, execCommand]);
 
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !onImageUpload) return;
-    if (!file.type.startsWith('image/')) return;
-    if (file.size > 5 * 1024 * 1024) return;
+  // Handle file picked in the Upload tab (shows preview before inserting)
+  const handleUploadFileSelect = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 10 * 1024 * 1024) return;
+    setUploadFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setUploadPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }, []);
 
+  const handleUploadFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleUploadFileSelect(file);
+    },
+    [handleUploadFileSelect]
+  );
+
+  const handleUploadDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setUploadDragOver(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file) handleUploadFileSelect(file);
+    },
+    [handleUploadFileSelect]
+  );
+
+  // Upload to server (or embed base64 if no handler) then insert into editor
+  const insertUploadedImage = useCallback(async () => {
+    if (!uploadFile) return;
     setIsUploading(true);
     try {
-      const url = await onImageUpload(file);
+      let url: string;
+      if (onImageUpload) {
+        url = await onImageUpload(uploadFile);
+      } else {
+        // Fallback: embed as base64 data URL
+        url = uploadPreview!;
+      }
       execCommand("insertImage", url);
+      setUploadFile(null);
+      setUploadPreview(null);
+      setImagePopoverOpen(false);
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error("Upload failed:", error);
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (uploadFileInputRef.current) uploadFileInputRef.current.value = "";
     }
-  }, [onImageUpload, execCommand]);
+  }, [uploadFile, uploadPreview, onImageUpload, execCommand]);
 
-  const handlePaste = useCallback((e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData("text/plain");
-    document.execCommand("insertText", false, text);
-    handleContentChange();
-  }, [handleContentChange]);
+  const clearUploadPreview = useCallback(() => {
+    setUploadFile(null);
+    setUploadPreview(null);
+    if (uploadFileInputRef.current) uploadFileInputRef.current.value = "";
+  }, []);
+
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      e.preventDefault();
+      const text = e.clipboardData.getData("text/plain");
+      document.execCommand("insertText", false, text);
+      handleContentChange();
+    },
+    [handleContentChange]
+  );
 
   return (
     <TooltipProvider>
       <div className={cn("border rounded-lg overflow-hidden bg-background", className)}>
+        {/* Hidden file input for image upload */}
         <input
           type="file"
-          ref={fileInputRef}
+          ref={uploadFileInputRef}
           className="hidden"
           accept="image/*"
-          onChange={handleFileSelect}
+          onChange={handleUploadFileInputChange}
         />
 
         {/* Toolbar */}
@@ -338,63 +390,162 @@ export const RichTextEditor = ({
           </Popover>
           <ToolbarButton icon={<Unlink className="h-4 w-4" />} tooltip="Xoá liên kết" onClick={() => execCommand("unlink")} />
 
-          {/* Image */}
-          <Popover>
+          {/* Image – Upload + URL tabs */}
+          <Popover
+            open={imagePopoverOpen}
+            onOpenChange={(open) => {
+              setImagePopoverOpen(open);
+              if (!open) {
+                setUploadFile(null);
+                setUploadPreview(null);
+                setImageUrl("");
+              }
+            }}
+          >
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <Image className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-72 p-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Chèn hình ảnh</label>
-                <Input
-                  placeholder="URL hình ảnh"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && insertImage()}
-                />
-                <Button size="sm" onClick={insertImage} className="w-full">
-                  Chèn
-                </Button>
-                {onImageUpload && (
-                  <>
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
+            <PopoverContent className="w-80 p-3" align="start">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ImagePlus className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Chèn hình ảnh</span>
+                </div>
+
+                <Tabs defaultValue="upload">
+                  <TabsList className="grid w-full grid-cols-2 h-8">
+                    <TabsTrigger value="upload" className="text-xs gap-1">
+                      <Upload className="h-3 w-3" />
+                      Tải ảnh lên
+                    </TabsTrigger>
+                    <TabsTrigger value="url" className="text-xs gap-1">
+                      <Link className="h-3 w-3" />
+                      URL ảnh
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* ── Upload Tab ── */}
+                  <TabsContent value="upload" className="mt-3 space-y-3">
+                    {uploadPreview ? (
+                      <div className="space-y-2">
+                        <div className="relative rounded-lg overflow-hidden border border-border bg-muted/30">
+                          <img
+                            src={uploadPreview}
+                            alt="Preview"
+                            className="w-full max-h-40 object-contain"
+                          />
+                          <button
+                            type="button"
+                            onClick={clearUploadPreview}
+                            className="absolute top-1 right-1 h-6 w-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/80 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {uploadFile?.name}{" "}
+                          <span className="opacity-60">
+                            ({uploadFile ? (uploadFile.size / 1024).toFixed(1) : 0} KB)
+                          </span>
+                        </p>
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          onClick={insertUploadedImage}
+                          disabled={isUploading}
+                        >
+                          {isUploading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Đang tải lên...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              {onImageUpload ? "Tải lên & chèn ảnh" : "Chèn ảnh"}
+                            </>
+                          )}
+                        </Button>
                       </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-popover px-2 text-muted-foreground">hoặc</span>
+                    ) : (
+                      /* Drag-and-drop zone */
+                      <div
+                        onDrop={handleUploadDrop}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setUploadDragOver(true);
+                        }}
+                        onDragLeave={() => setUploadDragOver(false)}
+                        onClick={() => uploadFileInputRef.current?.click()}
+                        className={cn(
+                          "border-2 border-dashed rounded-lg p-5 text-center cursor-pointer transition-all select-none",
+                          uploadDragOver
+                            ? "border-primary bg-primary/5 scale-[1.01]"
+                            : "border-border hover:border-primary/50 hover:bg-muted/30"
+                        )}
+                      >
+                        <div className="flex flex-col items-center gap-2 pointer-events-none">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Upload className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">
+                              Kéo thả hoặc click để chọn ảnh
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              PNG, JPG, GIF, WEBP (tối đa 10MB)
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                  </TabsContent>
+
+                  {/* ── URL Tab ── */}
+                  <TabsContent value="url" className="mt-3 space-y-2">
+                    <Input
+                      placeholder="https://example.com/image.jpg"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && insertImage()}
+                      className="text-sm"
+                    />
+                    {imageUrl && (
+                      <div className="rounded-lg overflow-hidden border border-border bg-muted/30">
+                        <img
+                          src={imageUrl}
+                          alt="Preview"
+                          className="w-full max-h-32 object-contain"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
                     <Button
                       size="sm"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
+                      onClick={insertImage}
                       className="w-full"
+                      disabled={!imageUrl.trim()}
                     >
-                      {isUploading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Đang tải...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Tải ảnh lên
-                        </>
-                      )}
+                      <ImagePlus className="h-4 w-4 mr-2" />
+                      Chèn ảnh
                     </Button>
-                  </>
-                )}
+                  </TabsContent>
+                </Tabs>
               </div>
             </PopoverContent>
           </Popover>
 
           <Separator orientation="vertical" className="h-6 mx-1" />
 
-          <ToolbarButton icon={<RemoveFormatting className="h-4 w-4" />} tooltip="Xoá định dạng" onClick={() => execCommand("removeFormat")} />
+          <ToolbarButton
+            icon={<RemoveFormatting className="h-4 w-4" />}
+            tooltip="Xoá định dạng"
+            onClick={() => execCommand("removeFormat")}
+          />
         </div>
 
         {/* Editor Content */}

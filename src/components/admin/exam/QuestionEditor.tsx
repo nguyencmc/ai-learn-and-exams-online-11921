@@ -173,6 +173,7 @@
                    required={letter === 'A' || letter === 'B'}
                    onChange={(value) => onUpdate(index, getOptionField(letter), value)}
                    onToggleCorrect={() => toggleCorrectAnswer(letter)}
+                   onImageUpload={onImageUpload ? async (file: File) => onImageUpload(file, index, `option_${letter.toLowerCase()}_image`) : undefined}
                  />
                ))}
                
@@ -193,6 +194,7 @@
                        required={false}
                        onChange={(value) => onUpdate(index, getOptionField(letter), value)}
                        onToggleCorrect={() => toggleCorrectAnswer(letter)}
+                       onImageUpload={onImageUpload ? async (file: File) => onImageUpload(file, index, `option_${letter.toLowerCase()}_image`) : undefined}
                      />
                    );
                  })
@@ -221,6 +223,8 @@
                   onChange={(value) => onUpdate(index, 'explanation', value)}
                   placeholder="Giải thích đáp án đúng..."
                   miniMinHeight="60px"
+                  showImageUpload={!!onImageUpload}
+                  onImageUpload={onImageUpload ? async (file: File) => onImageUpload(file, index, 'explanation_image') : undefined}
                 />
              </div>
            </CardContent>
@@ -238,6 +242,7 @@
    required: boolean;
    onChange: (value: string) => void;
    onToggleCorrect: () => void;
+   onImageUpload?: (file: File) => Promise<string>;
  }
  
  const OptionInput = ({
@@ -247,6 +252,7 @@
    required,
    onChange,
    onToggleCorrect,
+   onImageUpload,
  }: OptionInputProps) => {
    return (
      <div className="flex items-start gap-2">
@@ -269,6 +275,8 @@
             placeholder={`Đáp án ${letter}${required ? ' *' : ''}`}
             className={isCorrect ? "border-green-600" : ""}
             miniMinHeight="40px"
+            showImageUpload={!!onImageUpload}
+            onImageUpload={onImageUpload}
           />
        </div>
      </div>
