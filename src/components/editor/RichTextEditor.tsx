@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState } from "react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -125,6 +125,45 @@ const ToolbarButton = React.forwardRef<
 ));
 ToolbarButton.displayName = "ToolbarButton";
 
+// ─── Image resize helper ────────────────────────────────────────────────────
+const resizeImageFile = (
+  file: File,
+  maxWidth = 1200,
+  maxHeight = 1200,
+  quality = 0.85
+): Promise<{ blob: Blob; dataUrl: string }> =>
+  new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return reject(new Error("Canvas toBlob failed"));
+          const reader = new FileReader();
+          reader.onload = (e) => resolve({ blob, dataUrl: e.target!.result as string });
+          reader.readAsDataURL(blob);
+        },
+        file.type === "image/png" ? "image/png" : "image/jpeg",
+        quality
+      );
+    };
+    img.onerror = reject;
+    img.src = objectUrl;
+  });
+// ────────────────────────────────────────────────────────────────────────────
+
 export const RichTextEditor = ({
   content,
   value,
@@ -143,19 +182,40 @@ export const RichTextEditor = ({
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadDragOver, setUploadDragOver] = useState(false);
+  const [uploadDimensions, setUploadDimensions] = useState<{ w: number; h: number } | null>(null);
+  // Track whether the last change came from user typing (not external prop update)
+  const isInternalChange = useRef(false);
 
   const htmlValue = content ?? value ?? "";
+
+  // ── Fix: only update DOM when value changes externally (not from typing) ──
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    // Skip if the change originated from within the editor itself
+    if (isInternalChange.current) {
+      isInternalChange.current = false;
+      return;
+    }
+    // Only update if content actually differs to avoid cursor reset
+    if (editor.innerHTML !== htmlValue) {
+      editor.innerHTML = htmlValue;
+    }
+  }, [htmlValue]);
+  // ──────────────────────────────────────────────────────────────────────────
 
   const execCommand = useCallback((command: string, cmdValue?: string) => {
     document.execCommand(command, false, cmdValue);
     editorRef.current?.focus();
     if (editorRef.current && onChange) {
+      isInternalChange.current = true;
       onChange(editorRef.current.innerHTML);
     }
   }, [onChange]);
 
   const handleContentChange = useCallback(() => {
     if (editorRef.current && onChange) {
+      isInternalChange.current = true;
       onChange(editorRef.current.innerHTML);
     }
   }, [onChange]);
@@ -179,14 +239,28 @@ export const RichTextEditor = ({
     }
   }, [imageUrl, execCommand]);
 
-  // Handle file picked in the Upload tab (shows preview before inserting)
-  const handleUploadFileSelect = useCallback((file: File) => {
+  // Handle file picked — resize then preview
+  const handleUploadFileSelect = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) return;
     if (file.size > 10 * 1024 * 1024) return;
-    setUploadFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => setUploadPreview(e.target?.result as string);
-    reader.readAsDataURL(file);
+    try {
+      const { blob, dataUrl } = await resizeImageFile(file);
+      // Wrap resized blob as a File so we can still pass it to onImageUpload
+      const resized = new File([blob], file.name, { type: blob.type });
+      setUploadFile(resized);
+      setUploadPreview(dataUrl);
+      // Get dimensions from canvas result
+      const img = new window.Image();
+      img.onload = () => setUploadDimensions({ w: img.naturalWidth, h: img.naturalHeight });
+      img.src = dataUrl;
+    } catch {
+      // Fallback: use original file without resize
+      setUploadFile(file);
+      setUploadDimensions(null);
+      const reader = new FileReader();
+      reader.onload = (e) => setUploadPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
   }, []);
 
   const handleUploadFileInputChange = useCallback(
@@ -234,6 +308,7 @@ export const RichTextEditor = ({
   const clearUploadPreview = useCallback(() => {
     setUploadFile(null);
     setUploadPreview(null);
+    setUploadDimensions(null);
     if (uploadFileInputRef.current) uploadFileInputRef.current.value = "";
   }, []);
 
@@ -447,7 +522,8 @@ export const RichTextEditor = ({
                         <p className="text-xs text-muted-foreground truncate">
                           {uploadFile?.name}{" "}
                           <span className="opacity-60">
-                            ({uploadFile ? (uploadFile.size / 1024).toFixed(1) : 0} KB)
+                            ({uploadFile ? (uploadFile.size / 1024).toFixed(1) : 0} KB
+                            {uploadDimensions ? ` · ${uploadDimensions.w}×${uploadDimensions.h}px` : ""})
                           </span>
                         </p>
                         <Button
@@ -548,7 +624,7 @@ export const RichTextEditor = ({
           />
         </div>
 
-        {/* Editor Content */}
+        {/* Editor Content — dùng ref thay vì dangerouslySetInnerHTML để tránh reset cursor */}
         <div
           ref={editorRef}
           contentEditable
@@ -563,7 +639,6 @@ export const RichTextEditor = ({
           style={{ minHeight }}
           onInput={handleContentChange}
           onPaste={handlePaste}
-          dangerouslySetInnerHTML={{ __html: htmlValue }}
           data-placeholder={placeholder}
           suppressContentEditableWarning
         />
