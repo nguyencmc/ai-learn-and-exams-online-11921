@@ -188,20 +188,49 @@ export const RichTextEditor = ({
 
   const htmlValue = content ?? value ?? "";
 
+  // ── Inject copy buttons into every <pre> block inside the editor ──────────
+  const injectCopyButtons = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.querySelectorAll("pre").forEach((pre) => {
+      if (pre.querySelector(".rte-copy-btn")) return; // already injected
+      pre.style.position = "relative";
+      const btn = document.createElement("button");
+      btn.className = "rte-copy-btn";
+      btn.type = "button";
+      btn.title = "Copy code";
+      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+      btn.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const code = pre.querySelector("code")?.innerText ?? pre.innerText;
+        navigator.clipboard.writeText(code).then(() => {
+          btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+          btn.classList.add("rte-copy-btn--copied");
+          setTimeout(() => {
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+            btn.classList.remove("rte-copy-btn--copied");
+          }, 1500);
+        });
+      });
+      pre.appendChild(btn);
+    });
+  }, []);
+  // ──────────────────────────────────────────────────────────────────────────
+
   // ── Fix: only update DOM when value changes externally (not from typing) ──
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    // Skip if the change originated from within the editor itself
     if (isInternalChange.current) {
       isInternalChange.current = false;
       return;
     }
-    // Only update if content actually differs to avoid cursor reset
     if (editor.innerHTML !== htmlValue) {
       editor.innerHTML = htmlValue;
     }
-  }, [htmlValue]);
+    injectCopyButtons();
+  }, [htmlValue, injectCopyButtons]);
   // ──────────────────────────────────────────────────────────────────────────
 
   const execCommand = useCallback((command: string, cmdValue?: string) => {
@@ -211,14 +240,16 @@ export const RichTextEditor = ({
       isInternalChange.current = true;
       onChange(editorRef.current.innerHTML);
     }
-  }, [onChange]);
+    injectCopyButtons();
+  }, [onChange, injectCopyButtons]);
 
   const handleContentChange = useCallback(() => {
     if (editorRef.current && onChange) {
       isInternalChange.current = true;
       onChange(editorRef.current.innerHTML);
     }
-  }, [onChange]);
+    injectCopyButtons();
+  }, [onChange, injectCopyButtons]);
 
   const formatBlock = useCallback((tag: string) => {
     execCommand("formatBlock", tag === "p" ? "p" : tag);
@@ -632,7 +663,8 @@ export const RichTextEditor = ({
             "p-4 outline-none overflow-auto prose prose-sm max-w-none dark:prose-invert",
             "focus:ring-0 focus:outline-none",
             "[&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic",
-            "[&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:font-mono [&_pre]:text-sm",
+            "[&_pre]:bg-[#1e1e2e] [&_pre]:text-[#cdd6f4] [&_pre]:p-4 [&_pre]:pt-8 [&_pre]:rounded-lg [&_pre]:font-mono [&_pre]:text-sm [&_pre]:overflow-x-auto [&_pre]:relative",
+            "[&_code]:bg-transparent [&_code]:text-inherit [&_code]:p-0",
             "[&_a]:text-primary [&_a]:underline",
             "[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md"
           )}
@@ -648,6 +680,35 @@ export const RichTextEditor = ({
             content: attr(data-placeholder);
             color: hsl(var(--muted-foreground));
             pointer-events: none;
+          }
+
+          /* ── Code block copy button ── */
+          .rte-copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid rgba(205, 214, 244, 0.2);
+            background: rgba(205, 214, 244, 0.08);
+            color: #a6adc8;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            z-index: 10;
+          }
+          .rte-copy-btn:hover {
+            background: rgba(205, 214, 244, 0.18);
+            color: #cdd6f4;
+            border-color: rgba(205, 214, 244, 0.4);
+          }
+          .rte-copy-btn--copied {
+            background: rgba(166, 227, 161, 0.18) !important;
+            color: #a6e3a1 !important;
+            border-color: rgba(166, 227, 161, 0.4) !important;
           }
         `}</style>
       </div>
