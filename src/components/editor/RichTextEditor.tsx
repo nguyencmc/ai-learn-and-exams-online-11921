@@ -212,6 +212,8 @@ export const RichTextEditor = ({
   const [uploadOriginalSize, setUploadOriginalSize] = useState<number | null>(null);
   // Track whether the last change came from user typing (not external prop update)
   const isInternalChange = useRef(false);
+  // ── Lưu selection trước khi Popover mở (focus sẽ bị mất khi click toolbar) ──
+  const savedRangeRef = useRef<Range | null>(null);
 
   const htmlValue = content ?? value ?? "";
 
@@ -288,6 +290,45 @@ export const RichTextEditor = ({
     injectCopyButtons();
   }, [onChange, injectCopyButtons, getCleanHtml]);
 
+  // ── Save / restore cursor selection (mất khi click Popover) ──────────────
+  const saveSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      // Chỉ lưu nếu selection nằm trong editor
+      if (editorRef.current?.contains(range.commonAncestorContainer)) {
+        savedRangeRef.current = range.cloneRange();
+      }
+    }
+  }, []);
+
+  const restoreSelection = useCallback(() => {
+    const editor = editorRef.current;
+    const range = savedRangeRef.current;
+    if (!editor || !range) {
+      // Không có selection đã lưu → focus và đặt cursor cuối
+      editor?.focus();
+      return;
+    }
+    editor.focus();
+    const sel = window.getSelection();
+    if (sel) {
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }, []);
+
+  const execCommandWithRestore = useCallback((command: string, cmdValue?: string) => {
+    restoreSelection();
+    document.execCommand(command, false, cmdValue);
+    if (editorRef.current && onChange) {
+      isInternalChange.current = true;
+      onChange(getCleanHtml());
+    }
+    injectCopyButtons();
+  }, [restoreSelection, onChange, getCleanHtml, injectCopyButtons]);
+  // ──────────────────────────────────────────────────────────────────────────
+
   const handleContentChange = useCallback(() => {
     if (editorRef.current && onChange) {
       isInternalChange.current = true;
@@ -309,11 +350,11 @@ export const RichTextEditor = ({
 
   const insertImage = useCallback(() => {
     if (imageUrl) {
-      execCommand("insertImage", imageUrl);
+      execCommandWithRestore("insertImage", imageUrl);
       setImageUrl("");
       setImagePopoverOpen(false);
     }
-  }, [imageUrl, execCommand]);
+  }, [imageUrl, execCommandWithRestore]);
 
   // Handle file picked — resize then preview
   const handleUploadFileSelect = useCallback(async (file: File) => {
@@ -368,10 +409,9 @@ export const RichTextEditor = ({
       if (onImageUpload) {
         url = await onImageUpload(uploadFile);
       } else {
-        // Fallback: embed as base64 data URL
         url = uploadPreview!;
       }
-      execCommand("insertImage", url);
+      execCommandWithRestore("insertImage", url);
       setUploadFile(null);
       setUploadPreview(null);
       setImagePopoverOpen(false);
@@ -381,7 +421,7 @@ export const RichTextEditor = ({
       setIsUploading(false);
       if (uploadFileInputRef.current) uploadFileInputRef.current.value = "";
     }
-  }, [uploadFile, uploadPreview, onImageUpload, execCommand]);
+  }, [uploadFile, uploadPreview, onImageUpload, execCommandWithRestore]);
 
   const clearUploadPreview = useCallback(() => {
     setUploadFile(null);
@@ -393,9 +433,9 @@ export const RichTextEditor = ({
 
   // ── Insert image chosen from library ─────────────────────────────────────
   const insertLibraryImage = useCallback((url: string) => {
-    execCommand("insertImage", url);
+    execCommandWithRestore("insertImage", url);
     setImagePopoverOpen(false);
-  }, [execCommand]);
+  }, [execCommandWithRestore]);
 
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
@@ -641,7 +681,12 @@ export const RichTextEditor = ({
             }}
           >
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onMouseDown={saveSelection}
+              >
                 <Image className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
