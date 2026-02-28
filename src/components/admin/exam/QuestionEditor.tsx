@@ -49,6 +49,7 @@
    onUpdate: (index: number, field: keyof Question, value: string | number) => void;
    onRemove: (index: number) => void;
    onImageUpload?: (file: File, questionIndex: number, field: string) => Promise<string>;
+   imageBucket?: string;
  }
  
  export const QuestionEditor = ({ 
@@ -56,7 +57,8 @@
    index, 
    onUpdate, 
    onRemove,
-   onImageUpload 
+   onImageUpload,
+   imageBucket,
  }: QuestionEditorProps) => {
    const [isExpanded, setIsExpanded] = useState(true);
  
@@ -158,6 +160,7 @@
                   miniMinHeight="80px"
                   showImageUpload={!!onImageUpload}
                   onImageUpload={onImageUpload ? handleEditorImageUpload : undefined}
+                  imageBucket={imageBucket}
                 />
              </div>
  
@@ -174,6 +177,7 @@
                    onChange={(value) => onUpdate(index, getOptionField(letter), value)}
                    onToggleCorrect={() => toggleCorrectAnswer(letter)}
                    onImageUpload={onImageUpload ? async (file: File) => onImageUpload(file, index, `option_${letter.toLowerCase()}_image`) : undefined}
+                   imageBucket={imageBucket}
                  />
                ))}
                
@@ -195,6 +199,7 @@
                        onChange={(value) => onUpdate(index, getOptionField(letter), value)}
                        onToggleCorrect={() => toggleCorrectAnswer(letter)}
                        onImageUpload={onImageUpload ? async (file: File) => onImageUpload(file, index, `option_${letter.toLowerCase()}_image`) : undefined}
+                       imageBucket={imageBucket}
                      />
                    );
                  })
@@ -225,6 +230,7 @@
                   miniMinHeight="60px"
                   showImageUpload={!!onImageUpload}
                   onImageUpload={onImageUpload ? async (file: File) => onImageUpload(file, index, 'explanation_image') : undefined}
+                  imageBucket={imageBucket}
                 />
              </div>
            </CardContent>
@@ -243,6 +249,7 @@
    onChange: (value: string) => void;
    onToggleCorrect: () => void;
    onImageUpload?: (file: File) => Promise<string>;
+   imageBucket?: string;
  }
  
  const OptionInput = ({
@@ -253,6 +260,7 @@
    onChange,
    onToggleCorrect,
    onImageUpload,
+   imageBucket,
  }: OptionInputProps) => {
    return (
      <div className="flex items-start gap-2">
@@ -277,6 +285,7 @@
             miniMinHeight="40px"
             showImageUpload={!!onImageUpload}
             onImageUpload={onImageUpload}
+            imageBucket={imageBucket}
           />
        </div>
      </div>

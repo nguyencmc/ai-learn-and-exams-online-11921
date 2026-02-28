@@ -41,6 +41,29 @@ const ArticleEditorPage = () => {
   });
   const [newTag, setNewTag] = useState('');
 
+  // ── Upload ảnh nội dung bài viết lên Supabase Storage ──────────────────
+  const handleContentImageUpload = async (file: File): Promise<string> => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const ext = file.name.split('.').pop();
+    const uid = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const path = `article-images/${y}/${m}/${d}/${uid}.${ext}`;
+
+    const { data, error } = await supabase.storage
+      .from('public-assets')
+      .upload(path, file, { cacheControl: '3600', upsert: false });
+
+    if (error) throw new Error(error.message);
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('public-assets')
+      .getPublicUrl(data.path);
+
+    return publicUrl;
+  };
+
   useEffect(() => {
     if (!user) {
       navigate('/auth');
@@ -327,6 +350,9 @@ const ArticleEditorPage = () => {
                   content={formData.content}
                   onChange={(content) => setFormData(prev => ({ ...prev, content }))}
                   placeholder="Viết nội dung bài viết của bạn..."
+                  onImageUpload={handleContentImageUpload}
+                  imageBucket="public-assets"
+                  imageBucketPrefix="article-images"
                 />
               </div>
             </CardContent>

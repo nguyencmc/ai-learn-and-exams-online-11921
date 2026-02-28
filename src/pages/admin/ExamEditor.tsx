@@ -415,6 +415,7 @@ const ExamEditor = () => {
               questions={questions}
               onQuestionsChange={setQuestions}
               onImageUpload={handleImageUpload}
+              imageBucket="question-images"
             />
           )}
 

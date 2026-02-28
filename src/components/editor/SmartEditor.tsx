@@ -14,6 +14,8 @@ interface SmartEditorProps {
   defaultAdvanced?: boolean;
   /** Hide the toggle button - deprecated */
   hideToggle?: boolean;
+  imageBucket?: string;
+  imageBucketPrefix?: string;
 }
 
 /**
@@ -27,6 +29,8 @@ export const SmartEditor = ({
   className,
   fullMinHeight = '200px',
   onImageUpload,
+  imageBucket,
+  imageBucketPrefix,
 }: SmartEditorProps) => {
   return (
     <div className={cn('relative', className)}>
@@ -36,6 +40,8 @@ export const SmartEditor = ({
         placeholder={placeholder}
         minHeight={fullMinHeight}
         onImageUpload={onImageUpload}
+        imageBucket={imageBucket}
+        imageBucketPrefix={imageBucketPrefix}
       />
     </div>
   );

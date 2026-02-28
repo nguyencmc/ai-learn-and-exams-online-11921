@@ -22,6 +22,7 @@ interface CreateQuestionsStepProps {
   questions: Question[];
   onQuestionsChange: (questions: Question[]) => void;
   onImageUpload?: (file: File, questionIndex: number, field: string) => Promise<string>;
+  imageBucket?: string;
 }
 
 const QUESTIONS_PER_PAGE = 10;
@@ -30,6 +31,7 @@ export const CreateQuestionsStep = ({
   questions,
   onQuestionsChange,
   onImageUpload,
+  imageBucket,
 }: CreateQuestionsStepProps) => {
   const [activeTab, setActiveTab] = useState('manual');
   const [currentPage, setCurrentPage] = useState(1);
@@ -263,6 +265,7 @@ export const CreateQuestionsStep = ({
                   onUpdate={updateQuestion}
                   onRemove={removeQuestion}
                   onImageUpload={onImageUpload}
+                  imageBucket={imageBucket}
                 />
               ))}
 

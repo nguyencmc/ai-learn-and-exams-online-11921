@@ -42,7 +42,9 @@ import {
   Loader2,
   X,
   ImagePlus,
+  GalleryHorizontalEnd,
 } from "lucide-react";
+import { ImageLibraryPicker } from "./ImageLibraryPicker";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -59,6 +61,12 @@ interface RichTextEditorProps {
   className?: string;
   minHeight?: string;
   onImageUpload?: (file: File) => Promise<string>;
+  /** Supabase Storage bucket name để hiển thị thư viện ảnh đã upload.
+   *  Ví dụ: "question-images" | "public-assets"
+   *  Nếu không truyền, tab Thư viện sẽ bị ẩn. */
+  imageBucket?: string;
+  /** Prefix (thư mục con) trong bucket cần list, mặc định "" (root) */
+  imageBucketPrefix?: string;
 }
 
 const FONT_SIZES = [
@@ -188,6 +196,8 @@ export const RichTextEditor = ({
   className,
   minHeight = "300px",
   onImageUpload,
+  imageBucket,
+  imageBucketPrefix = "",
 }: RichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const uploadFileInputRef = useRef<HTMLInputElement>(null);
@@ -380,6 +390,12 @@ export const RichTextEditor = ({
     setUploadOriginalSize(null);
     if (uploadFileInputRef.current) uploadFileInputRef.current.value = "";
   }, []);
+
+  // ── Insert image chosen from library ─────────────────────────────────────
+  const insertLibraryImage = useCallback((url: string) => {
+    execCommand("insertImage", url);
+    setImagePopoverOpen(false);
+  }, [execCommand]);
 
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
@@ -629,7 +645,7 @@ export const RichTextEditor = ({
                 <Image className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-3" align="start">
+            <PopoverContent className={cn("p-3", imageBucket ? "w-96" : "w-80")} align="start">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <ImagePlus className="h-4 w-4 text-primary" />
@@ -637,15 +653,21 @@ export const RichTextEditor = ({
                 </div>
 
                 <Tabs defaultValue="upload">
-                  <TabsList className="grid w-full grid-cols-2 h-8">
+                  <TabsList className={cn("grid w-full h-8", imageBucket ? "grid-cols-3" : "grid-cols-2")}>
                     <TabsTrigger value="upload" className="text-xs gap-1">
                       <Upload className="h-3 w-3" />
-                      Tải ảnh lên
+                      Tải lên
                     </TabsTrigger>
                     <TabsTrigger value="url" className="text-xs gap-1">
                       <Link className="h-3 w-3" />
                       URL ảnh
                     </TabsTrigger>
+                    {imageBucket && (
+                      <TabsTrigger value="library" className="text-xs gap-1">
+                        <GalleryHorizontalEnd className="h-3 w-3" />
+                        Thư viện
+                      </TabsTrigger>
+                    )}
                   </TabsList>
 
                   {/* ── Upload Tab ── */}
@@ -762,6 +784,17 @@ export const RichTextEditor = ({
                       Chèn ảnh
                     </Button>
                   </TabsContent>
+
+                  {/* ── Library Tab ── */}
+                  {imageBucket && (
+                    <TabsContent value="library" className="mt-3">
+                      <ImageLibraryPicker
+                        bucket={imageBucket}
+                        prefix={imageBucketPrefix}
+                        onSelect={insertLibraryImage}
+                      />
+                    </TabsContent>
+                  )}
                 </Tabs>
               </div>
             </PopoverContent>

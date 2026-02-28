@@ -361,6 +361,7 @@ export default function PracticeEditorPage() {
               questions={questions}
               onQuestionsChange={setQuestions}
               defaultDifficulty={level}
+              imageBucket="question-images"
             />
           )}
 

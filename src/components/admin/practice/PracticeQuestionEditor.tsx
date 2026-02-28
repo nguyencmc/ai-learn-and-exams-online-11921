@@ -53,6 +53,7 @@ interface PracticeQuestionEditorProps {
   onUpdate: (index: number, field: keyof PracticeQuestion, value: any) => void;
   onRemove: (index: number) => void;
   onImageUpload?: (file: File, questionIndex: number, field: string) => Promise<string>;
+  imageBucket?: string;
 }
 
 export const PracticeQuestionEditor = ({ 
@@ -60,7 +61,8 @@ export const PracticeQuestionEditor = ({
   index, 
   onUpdate, 
   onRemove,
-  onImageUpload 
+  onImageUpload,
+  imageBucket,
 }: PracticeQuestionEditorProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
@@ -241,6 +243,7 @@ export const PracticeQuestionEditor = ({
                   miniMinHeight="80px"
                   showImageUpload={!!onImageUpload}
                   onImageUpload={onImageUpload ? handleEditorImageUpload : undefined}
+                  imageBucket={imageBucket}
                 />
               {question.question_image && (
                 <div className="relative inline-block">
@@ -334,6 +337,7 @@ export const PracticeQuestionEditor = ({
                    miniMinHeight="60px"
                    showImageUpload={!!onImageUpload}
                    onImageUpload={onImageUpload ? async (file: File) => onImageUpload(file, index, 'explanation_image') : undefined}
+                   imageBucket={imageBucket}
                  />
               </div>
             </div>

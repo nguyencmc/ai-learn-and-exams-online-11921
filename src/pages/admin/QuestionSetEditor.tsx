@@ -447,6 +447,7 @@ const QuestionSetEditor = () => {
               questions={questions}
               onQuestionsChange={setQuestions}
               defaultDifficulty={level}
+              imageBucket="question-images"
             />
           </div>
         </div>

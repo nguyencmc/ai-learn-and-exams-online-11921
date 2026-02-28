@@ -23,6 +23,7 @@ interface CreatePracticeQuestionsStepProps {
   onQuestionsChange: (questions: PracticeQuestion[]) => void;
   defaultDifficulty?: string;
   onImageUpload?: (file: File, questionIndex: number, field: string) => Promise<string>;
+  imageBucket?: string;
 }
 
 const QUESTIONS_PER_PAGE = 10;
@@ -32,6 +33,7 @@ export const CreatePracticeQuestionsStep = ({
   onQuestionsChange,
   defaultDifficulty = 'medium',
   onImageUpload,
+  imageBucket,
 }: CreatePracticeQuestionsStepProps) => {
   const [activeTab, setActiveTab] = useState('manual');
   const [currentPage, setCurrentPage] = useState(1);
@@ -310,6 +312,7 @@ export const CreatePracticeQuestionsStep = ({
                     onUpdate={(_, field, value) => updateQuestion(visibleIndex, field, value)}
                     onRemove={() => removeQuestion(visibleIndex)}
                     onImageUpload={onImageUpload}
+                    imageBucket={imageBucket}
                   />
                 );
               })}
