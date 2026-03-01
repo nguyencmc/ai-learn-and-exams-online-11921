@@ -21,12 +21,13 @@ export default function PracticeRunner() {
 
   const count = parseInt(searchParams.get('count') || '10', 10);
   const difficulty = (searchParams.get('difficulty') || 'all') as 'all' | 'easy' | 'medium' | 'hard';
+  const shuffle = searchParams.get('shuffle') !== '0'; // default true
 
   const { data: questions, isLoading, error } = usePracticeQuestions({
     setId: setId!,
     limit: count,
     difficulty,
-    shuffle: true,
+    shuffle,
     enabled: !!setId,
   });
 
