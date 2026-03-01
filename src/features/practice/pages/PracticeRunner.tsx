@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, ArrowRight, Check, RotateCcw } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, ArrowRight, Check, RotateCcw, Trophy, Target, BrainCircuit } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePracticeQuestions } from '../hooks/usePracticeQuestions';
 import { QuestionCard } from '../components/QuestionCard';
@@ -31,6 +33,7 @@ export default function PracticeRunner() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerState>>({});
   const [isChecking, setIsChecking] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
 
   const currentQuestion = questions?.[currentIndex];
@@ -123,10 +126,11 @@ export default function PracticeRunner() {
     setCurrentIndex(0);
     setAnswers({});
     setStats({ correct: 0, wrong: 0 });
+    setIsFinished(false);
   };
 
   const handleFinish = () => {
-    navigate('/practice');
+    setIsFinished(true);
   };
 
   if (isLoading) {
@@ -143,7 +147,7 @@ export default function PracticeRunner() {
   if (error || !questions || questions.length === 0) {
     return (
       <div className="min-h-screen bg-background">
-<main className="container mx-auto px-4 py-8 text-center">
+        <main className="container mx-auto px-4 py-8 text-center">
           <p className="text-destructive mb-4">
             {questions?.length === 0
               ? 'Không có câu hỏi phù hợp với tiêu chí đã chọn'
@@ -157,9 +161,98 @@ export default function PracticeRunner() {
     );
   }
 
+  // ── Summary screen ────────────────────────────────────────────────────────
+  if (isFinished) {
+    const total = questions.length;
+    const scorePercent = total > 0 ? Math.round((stats.correct / total) * 100) : 0;
+    const getEmoji = () => {
+      if (scorePercent >= 90) return '🎉';
+      if (scorePercent >= 70) return '👏';
+      if (scorePercent >= 50) return '👍';
+      return '💪';
+    };
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="container mx-auto px-4 py-8 max-w-xl">
+          <Card className="text-center">
+            <CardContent className="pt-10 pb-8 px-8 space-y-6">
+              {/* Icon */}
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto ${scorePercent >= 70 ? 'bg-green-500/15' : 'bg-orange-500/15'}`}>
+                {scorePercent >= 70
+                  ? <Trophy className="h-10 w-10 text-green-500" />
+                  : <Target className="h-10 w-10 text-orange-500" />}
+              </div>
+
+              {/* Title */}
+              <div>
+                <h2 className="text-2xl font-bold">Kết quả luyện tập {getEmoji()}</h2>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {questions.length} câu · Chế độ luyện tập
+                </p>
+              </div>
+
+              {/* Score */}
+              <div>
+                <div className={`text-5xl font-bold mb-2 ${scorePercent >= 80 ? 'text-green-500' : scorePercent >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>
+                  {scorePercent}%
+                </div>
+                <Progress value={scorePercent} className="h-2 mb-3" />
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="p-3 rounded-lg bg-green-500/10">
+                    <div className="text-2xl font-bold text-green-600">{stats.correct}</div>
+                    <div className="text-sm text-muted-foreground">Câu đúng</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-red-500/10">
+                    <div className="text-2xl font-bold text-red-600">{stats.wrong}</div>
+                    <div className="text-sm text-muted-foreground">Câu sai</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-3 pt-2">
+                {stats.wrong > 0 && (
+                  <Button variant="outline" onClick={() => navigate('/practice/review')}
+                    className="w-full gap-2">
+                    <BrainCircuit className="h-4 w-4" />
+                    Ôn lại {stats.wrong} câu sai
+                  </Button>
+                )}
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={handleRestart}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Làm lại
+                  </Button>
+                  <Button className="flex-1" onClick={() => navigate('/practice')}>
+                    Xong
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
-<main className="container mx-auto px-4 py-6 max-w-3xl">
+      <main className="container mx-auto px-4 py-6 max-w-3xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="ghost" onClick={() => navigate(`/practice/setup/${setId}`)}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Quay lại
+          </Button>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+            <span>Đúng: <strong className="text-foreground">{stats.correct}</strong></span>
+            <span className="mx-1 text-border">·</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+            <span>Sai: <strong className="text-foreground">{stats.wrong}</strong></span>
+          </div>
+        </div>
+
         {/* Progress */}
         <ProgressBar
           current={currentIndex + 1}
@@ -167,18 +260,6 @@ export default function PracticeRunner() {
           answered={Object.keys(answers).filter((id) => answers[id]?.isChecked).length}
           className="mb-6"
         />
-
-        {/* Stats */}
-        <div className="flex items-center justify-center gap-6 mb-6">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="w-3 h-3 rounded-full bg-green-500" />
-            <span>Đúng: {stats.correct}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="w-3 h-3 rounded-full bg-red-500" />
-            <span>Sai: {stats.wrong}</span>
-          </div>
-        </div>
 
         {/* Question Card */}
         {currentQuestion && (
@@ -194,17 +275,18 @@ export default function PracticeRunner() {
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-between mt-6 gap-4">
+        <div className="flex items-center justify-between mt-6 gap-3">
           <Button
             variant="outline"
             onClick={handlePrev}
             disabled={currentIndex === 0}
+            className="w-24"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Trước
           </Button>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-center">
             {!currentAnswer?.isChecked ? (
               <Button
                 onClick={handleCheck}
@@ -220,7 +302,7 @@ export default function PracticeRunner() {
                   Làm lại
                 </Button>
                 <Button onClick={handleFinish}>
-                  Hoàn thành
+                  Xem kết quả
                 </Button>
               </div>
             ) : (
@@ -235,6 +317,7 @@ export default function PracticeRunner() {
             variant="outline"
             onClick={handleNext}
             disabled={isLastQuestion}
+            className="w-24"
           >
             Tiếp
             <ArrowRight className="ml-2 h-4 w-4" />
