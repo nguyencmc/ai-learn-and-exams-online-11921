@@ -6,6 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const GEMINI_MODEL = 'gemini-2.0-flash';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -13,12 +16,11 @@ serve(async (req) => {
 
   try {
     const { userId } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured');
     }
 
     console.log('Smart recommendations request for user:', userId);
@@ -53,7 +55,7 @@ serve(async (req) => {
     // Build user context
     const userContext = {
       totalExams: attempts?.length || 0,
-      averageScore: attempts?.length 
+      averageScore: attempts?.length
         ? Math.round(attempts.reduce((acc, a) => acc + (a.score || 0), 0) / attempts.length)
         : 0,
       recentExams: attempts?.slice(0, 5).map(a => ({
@@ -74,114 +76,93 @@ serve(async (req) => {
 
     console.log('User context:', JSON.stringify(userContext, null, 2));
 
-    const systemPrompt = `Bạn là hệ thống gợi ý học tập thông minh. Dựa trên lịch sử học tập của học sinh, hãy đưa ra các gợi ý phù hợp.
+    const prompt = `Bạn là hệ thống gợi ý học tập thông minh. Dựa trên lịch sử học tập của học sinh, hãy đưa ra các gợi ý phù hợp.
 
 Phân tích:
 - Điểm trung bình và xu hướng điểm số
 - Độ khó phù hợp dựa trên hiệu suất
 - Các chủ đề cần cải thiện
-- Flashcards cần ôn tập`;
+- Flashcards cần ôn tập
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Dữ liệu học tập của học sinh:\n${JSON.stringify(userContext, null, 2)}\n\nHãy đưa ra gợi ý học tập.` },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "create_recommendations",
-              description: "Tạo danh sách gợi ý học tập cho học sinh",
-              parameters: {
-                type: "object",
-                properties: {
-                  summary: { type: "string", description: "Tóm tắt ngắn về hiệu suất học tập" },
-                  strengths: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Điểm mạnh của học sinh",
-                  },
-                  improvements: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Các điểm cần cải thiện",
-                  },
-                  recommendations: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        type: { type: "string", enum: ["exam", "flashcard", "practice", "review"], description: "Loại gợi ý" },
-                        title: { type: "string", description: "Tiêu đề gợi ý" },
-                        description: { type: "string", description: "Mô tả chi tiết" },
-                        priority: { type: "string", enum: ["high", "medium", "low"], description: "Mức độ ưu tiên" },
-                        examId: { type: "string", description: "ID bài thi (nếu có)" },
-                      },
-                      required: ["type", "title", "description", "priority"],
-                    },
-                  },
-                  suggestedDifficulty: { type: "string", enum: ["easy", "medium", "hard"], description: "Độ khó phù hợp" },
-                },
-                required: ["summary", "strengths", "improvements", "recommendations", "suggestedDifficulty"],
-              },
-            },
+Dữ liệu học tập của học sinh:
+${JSON.stringify(userContext, null, 2)}
+
+Hãy trả về JSON với cấu trúc chính xác sau (không có text khác ngoài JSON):
+{
+  "summary": "Tóm tắt ngắn về hiệu suất học tập",
+  "strengths": ["Điểm mạnh 1", "Điểm mạnh 2"],
+  "improvements": ["Điểm cần cải thiện 1", "Điểm cần cải thiện 2"],
+  "recommendations": [
+    {
+      "type": "exam",
+      "title": "Tiêu đề gợi ý",
+      "description": "Mô tả chi tiết",
+      "priority": "high",
+      "examId": "optional-exam-id"
+    }
+  ],
+  "suggestedDifficulty": "medium"
+}
+
+Lưu ý:
+- type phải là một trong: "exam", "flashcard", "practice", "review"
+- priority phải là một trong: "high", "medium", "low"
+- suggestedDifficulty phải là một trong: "easy", "medium", "hard"
+- examId chỉ điền khi type là "exam" và có ID trong danh sách availableExams`;
+
+    console.log('Calling Gemini API...');
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 2048,
+            responseMimeType: 'application/json',
           },
-        ],
-        tool_choice: { type: "function", function: { name: "create_recommendations" } },
-      }),
-    });
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      
+      console.error('Gemini API error:', response.status, errorText);
+
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Quá nhiều yêu cầu, vui lòng thử lại sau." }), {
+        return new Response(JSON.stringify({ error: 'Quá nhiều yêu cầu, vui lòng thử lại sau.' }), {
           status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Cần nạp thêm credits để sử dụng AI." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      return new Response(JSON.stringify({ error: "Lỗi AI gateway" }), {
+
+      return new Response(JSON.stringify({ error: 'Lỗi Gemini API' }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const data = await response.json();
-    console.log('AI response:', JSON.stringify(data, null, 2));
+    console.log('Gemini response received');
 
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall?.function?.arguments) {
-      const parsed = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify(parsed), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+      throw new Error('Không nhận được phản hồi từ Gemini');
     }
 
-    return new Response(JSON.stringify({ error: "Không thể tạo gợi ý" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const parsed = JSON.parse(text);
+    return new Response(JSON.stringify(parsed), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (error) {
-    console.error("Smart recommendations error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error('Smart recommendations error:', error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 });

@@ -5,15 +5,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const GEMINI_MODEL = 'gemini-2.0-flash';
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { audioUrl, duration } = await req.json();
-    
+
     if (!audioUrl) {
       return new Response(
         JSON.stringify({ error: 'Audio URL is required' }),
@@ -24,9 +26,8 @@ serve(async (req) => {
     console.log('Transcribing audio from:', audioUrl);
     console.log('Duration:', duration, 'seconds');
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured');
     }
 
     // Download audio file and convert to base64
@@ -35,19 +36,18 @@ serve(async (req) => {
     if (!audioResponse.ok) {
       throw new Error(`Failed to download audio: ${audioResponse.status}`);
     }
-    
+
     const audioBuffer = await audioResponse.arrayBuffer();
     const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
-    
-    // Get file extension from URL
+
+    // Get MIME type from URL extension
     const urlParts = audioUrl.split('.');
     const extension = urlParts[urlParts.length - 1].split('?')[0].toLowerCase();
     const mimeType = getMimeType(extension);
-    
+
     console.log('Audio file downloaded, size:', audioBuffer.byteLength, 'bytes');
     console.log('MIME type:', mimeType);
 
-    // Use Gemini to transcribe and generate timestamps
     const prompt = `Bạn là một chuyên gia phiên âm audio. Hãy nghe file audio này và tạo transcript với timestamps chính xác.
 
 QUAN TRỌNG - Định dạng output:
@@ -66,37 +66,35 @@ Ví dụ format output:
 
 Hãy transcribe audio và tạo timestamps chính xác:`;
 
-    console.log('Calling Lovable AI Gateway...');
-    
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: prompt
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mimeType};base64,${base64Audio}`
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 8000,
-        temperature: 0.3,
-      }),
-    });
+    console.log('Calling Gemini API...');
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: mimeType,
+                    data: base64Audio,
+                  },
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 8000,
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -105,22 +103,16 @@ Hãy transcribe audio và tạo timestamps chính xác:`;
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'Cần nạp thêm credits để sử dụng tính năng này.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
       const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
-      throw new Error(`AI Gateway error: ${response.status}`);
+      console.error('Gemini API error:', response.status, errorText);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const result = await response.json();
-    console.log('AI response received');
-    
-    const transcriptContent = result.choices?.[0]?.message?.content || '';
-    
+    console.log('Gemini response received');
+
+    const transcriptContent = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
     if (!transcriptContent) {
       throw new Error('No transcript generated');
     }
@@ -134,12 +126,12 @@ Hãy transcribe audio và tạo timestamps chính xác:`;
     // Ensure proper format with timestamps
     const lines = cleanTranscript.split('\n').filter((line: string) => line.trim());
     const formattedLines = lines.map((line: string) => {
-      // If line doesn't start with timestamp, check if it has content
       if (!line.match(/^\[\d{1,2}:\d{2}\]/)) {
-        // Skip lines that are just explanatory text
-        if (line.includes('transcript') || line.includes('Transcript') || 
-            line.includes('audio') || line.includes('Audio') ||
-            line.match(/^(Dưới đây|Here is|Below)/i)) {
+        if (
+          line.includes('transcript') || line.includes('Transcript') ||
+          line.includes('audio') || line.includes('Audio') ||
+          line.match(/^(Dưới đây|Here is|Below)/i)
+        ) {
           return null;
         }
       }
@@ -151,9 +143,9 @@ Hãy transcribe audio và tạo timestamps chính xác:`;
     console.log('Transcript generated successfully, lines:', formattedLines.length);
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         transcript: finalTranscript,
-        lineCount: formattedLines.length
+        lineCount: formattedLines.length,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

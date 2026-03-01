@@ -5,6 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const GEMINI_MODEL = 'gemini-2.0-flash';
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -12,111 +14,82 @@ serve(async (req) => {
 
   try {
     const { topic, count = 5, content } = await req.json();
-    
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'GEMINI_API_KEY chưa được cấu hình. Vui lòng liên hệ quản trị viên.' }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     let prompt = "";
-    
+
     if (content) {
-      // Generate from uploaded content
-      prompt = `Dựa trên nội dung sau, tạo ${count} flashcard để học và ôn tập. 
-      
+      prompt = `Dựa trên nội dung sau, tạo ${count} flashcard để học và ôn tập.
+
 Nội dung:
 ${content}
 
-Tạo flashcard với format JSON array:
+Trả về JSON array (không có text khác):
 [
   {
     "front": "Câu hỏi hoặc khái niệm cần nhớ",
     "back": "Câu trả lời hoặc giải thích chi tiết",
-    "hint": "Gợi ý ngắn gọn (tùy chọn)"
+    "hint": "Gợi ý ngắn gọn (tùy chọn, để null nếu không có)"
   }
-]
-
-Yêu cầu:
-- Front phải là câu hỏi rõ ràng hoặc khái niệm cần định nghĩa
-- Back phải có câu trả lời đầy đủ, dễ hiểu
-- Hint là gợi ý nhỏ giúp nhớ (không bắt buộc)
-- Chỉ trả về JSON array, không có text khác`;
+]`;
     } else {
-      // Generate from topic
       prompt = `Tạo ${count} flashcard về chủ đề: "${topic}"
 
-Tạo flashcard với format JSON array:
+Trả về JSON array (không có text khác):
 [
   {
     "front": "Câu hỏi hoặc khái niệm cần nhớ",
     "back": "Câu trả lời hoặc giải thích chi tiết",
-    "hint": "Gợi ý ngắn gọn (tùy chọn)"
+    "hint": "Gợi ý ngắn gọn (tùy chọn, để null nếu không có)"
   }
-]
-
-Yêu cầu:
-- Front phải là câu hỏi rõ ràng hoặc khái niệm quan trọng
-- Back phải có câu trả lời đầy đủ, chính xác
-- Hint là gợi ý nhỏ giúp nhớ (không bắt buộc)
-- Nội dung phải chính xác và hữu ích cho việc học
-- Chỉ trả về JSON array, không có text khác`;
+]`;
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: "Bạn là trợ lý tạo flashcard chuyên nghiệp. Luôn trả về JSON array hợp lệ với các flashcard chất lượng cao.",
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.5,
+            maxOutputTokens: 2048,
+            responseMimeType: 'application/json',
           },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
+        }),
+      }
+    );
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Gemini API error:', response.status, errorData);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Đã vượt giới hạn request. Vui lòng thử lại sau." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Cần nạp thêm credits để sử dụng AI." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error("AI gateway error");
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content;
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) throw new Error("No response from AI");
 
-    if (!aiResponse) {
-      throw new Error("No response from AI");
-    }
-
-    // Parse the JSON response
     let flashcards;
     try {
-      // Try to extract JSON from the response
-      const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        flashcards = JSON.parse(jsonMatch[0]);
-      } else {
-        flashcards = JSON.parse(aiResponse);
-      }
+      const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+      flashcards = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
     } catch (parseError) {
-      console.error("Failed to parse AI response:", aiResponse);
+      console.error("Failed to parse AI response:", rawText);
       throw new Error("Failed to parse flashcards from AI response");
     }
 
@@ -124,6 +97,7 @@ Yêu cầu:
       JSON.stringify({ flashcards }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+
   } catch (error) {
     console.error("Error generating flashcards:", error);
     return new Response(

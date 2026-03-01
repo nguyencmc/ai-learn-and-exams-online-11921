@@ -5,6 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const GEMINI_MODEL = 'gemini-2.0-flash';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -20,9 +22,12 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'GEMINI_API_KEY chưa được cấu hình. Vui lòng liên hệ quản trị viên.' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const optionsText = Object.entries(options)
@@ -30,20 +35,21 @@ serve(async (req) => {
       .map(([key, value]) => `${key.toUpperCase()}. ${value}`)
       .join('\n');
 
-    const userAnswerText = userAnswer 
-      ? `Người dùng đã chọn: ${userAnswer}` 
+    const userAnswerText = userAnswer
+      ? `Người dùng đã chọn: ${userAnswer}`
       : 'Người dùng chưa trả lời câu hỏi này';
 
-    const systemPrompt = `Bạn là một giáo viên chuyên nghiệp, nhiệt tình và giỏi giải thích. Nhiệm vụ của bạn là giải thích đáp án cho câu hỏi trắc nghiệm một cách chi tiết, dễ hiểu.
+    const prompt = `Bạn là một giáo viên chuyên nghiệp, nhiệt tình và giỏi giải thích. Nhiệm vụ của bạn là giải thích đáp án cho câu hỏi trắc nghiệm một cách chi tiết, dễ hiểu.
 
 Hãy giải thích:
 1. Tại sao đáp án đúng là đúng
 2. Tại sao các đáp án khác sai (nếu có)
 3. Cung cấp kiến thức liên quan hoặc mẹo ghi nhớ nếu phù hợp
 
-Giải thích ngắn gọn nhưng đầy đủ, sử dụng ngôn ngữ đơn giản, dễ hiểu. Trả lời bằng tiếng Việt.`;
+Giải thích ngắn gọn nhưng đầy đủ, sử dụng ngôn ngữ đơn giản, dễ hiểu. Trả lời bằng tiếng Việt.
 
-    const userPrompt = `Câu hỏi: ${question}
+---
+Câu hỏi: ${question}
 
 Các lựa chọn:
 ${optionsText}
@@ -53,41 +59,32 @@ ${userAnswerText}
 
 Hãy giải thích chi tiết tại sao đáp án ${correctAnswer} là đúng.`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-      }),
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
+        }),
+      }
+    );
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Gemini API error:', response.status, errorData);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: 'Quá nhiều yêu cầu, vui lòng thử lại sau.' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'Cần nạp thêm credits để sử dụng tính năng này.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
-      throw new Error('AI gateway error');
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const explanation = data.choices?.[0]?.message?.content;
+    const explanation = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!explanation) {
       throw new Error('No explanation generated');
