@@ -292,3 +292,14 @@ export async function fetchQuestionsByIds(ids: string[]): Promise<PracticeQuesti
   return (data || []).map(toPracticeQuestion);
 }
 
+export async function fetchAttemptsForSession(sessionId: string): Promise<PracticeAttempt[]> {
+  const { data, error } = await supabase
+    .from('practice_attempts')
+    .select('*')
+    .eq('exam_session_id', sessionId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data || []).map(toPracticeAttempt);
+}
+

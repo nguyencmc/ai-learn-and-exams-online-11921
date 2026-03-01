@@ -88,7 +88,7 @@ export function AIExplainButton({ question, userAnswer, className }: AIExplainBu
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full flex items-center justify-between px-4 py-3 bg-violet-500/8 hover:bg-violet-500/12 transition-colors group"
+        className="w-full flex items-center justify-between px-4 py-3 bg-violet-500/10 hover:bg-violet-500/15 transition-colors group"
       >
         <div className="flex items-center gap-2">
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/15">
