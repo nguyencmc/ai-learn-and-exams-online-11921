@@ -8,7 +8,6 @@ import { ArrowLeft, ArrowRight, Check, RotateCcw, Trophy, Target, BrainCircuit }
 import { useAuth } from '@/contexts/AuthContext';
 import { usePracticeQuestions } from '../hooks/usePracticeQuestions';
 import { QuestionCard } from '../components/QuestionCard';
-import { ProgressBar } from '../components/ProgressBar';
 import { createAttempt } from '../api';
 import type { AnswerState } from '../types';
 import { isMultiSelectQuestion, toggleMultiSelect, checkAnswerCorrect } from '../types';
@@ -136,19 +135,23 @@ export default function PracticeRunner() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-<main className="container mx-auto px-4 py-8 max-w-3xl">
-          <Skeleton className="h-8 w-full mb-4" />
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="border-b px-6 py-3 flex items-center justify-between">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-4 w-40" />
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-3xl mx-auto w-full">
+          <Skeleton className="h-3 w-full mb-6" />
           <Skeleton className="h-96 w-full" />
-        </main>
+        </div>
       </div>
     );
   }
 
   if (error || !questions || questions.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
-        <main className="container mx-auto px-4 py-8 text-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center px-4">
           <p className="text-destructive mb-4">
             {questions?.length === 0
               ? 'Không có câu hỏi phù hợp với tiêu chí đã chọn'
@@ -157,7 +160,7 @@ export default function PracticeRunner() {
           <Button onClick={() => navigate(`/practice/setup/${setId}`)}>
             Quay lại thiết lập
           </Button>
-        </main>
+        </div>
       </div>
     );
   }
@@ -236,32 +239,61 @@ export default function PracticeRunner() {
     );
   }
 
+  const answeredCount = Object.keys(answers).filter((id) => answers[id]?.isChecked).length;
+
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-6 max-w-3xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate(`/practice/setup/${setId}`)}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* ── Sticky top bar ── */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 gap-4">
+          {/* Left: back */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-2 shrink-0"
+            onClick={() => navigate(`/practice/setup/${setId}`)}
+          >
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
             Quay lại
           </Button>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-            <span>Đúng: <strong className="text-foreground">{stats.correct}</strong></span>
-            <span className="mx-1 text-border">·</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-            <span>Sai: <strong className="text-foreground">{stats.wrong}</strong></span>
+
+          {/* Center: progress bar */}
+          <div className="flex-1 max-w-xl">
+            <Progress
+              value={questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0}
+              className="h-2"
+            />
+          </div>
+
+          {/* Right: stats */}
+          <div className="flex items-center gap-3 text-sm shrink-0">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-muted-foreground">Đúng:</span>
+              <strong className="text-green-600">{stats.correct}</strong>
+            </span>
+            <span className="text-border">·</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-500" />
+              <span className="text-muted-foreground">Sai:</span>
+              <strong className="text-red-600">{stats.wrong}</strong>
+            </span>
           </div>
         </div>
 
-        {/* Progress */}
-        <ProgressBar
-          current={currentIndex + 1}
-          total={questions.length}
-          answered={Object.keys(answers).filter((id) => answers[id]?.isChecked).length}
-          className="mb-6"
-        />
+        {/* Sub-bar: câu X / Y · Đã trả lời */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-1.5 text-xs text-muted-foreground border-t border-border/40">
+          <span>
+            Câu <span className="font-semibold text-foreground">{currentIndex + 1}</span> / {questions.length}
+          </span>
+          <span>
+            Đã trả lời: <span className="font-semibold text-foreground">{answeredCount}</span>
+          </span>
+        </div>
+      </div>
 
+      {/* ── Main content — fullwidth centered ── */}
+      <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col">
         {/* Question Card */}
         {currentQuestion && (
           <QuestionCard
@@ -275,13 +307,13 @@ export default function PracticeRunner() {
           />
         )}
 
-        {/* Actions */}
+        {/* ── Action bar ── */}
         <div className="flex items-center justify-between mt-6 gap-3">
           <Button
             variant="outline"
             onClick={handlePrev}
             disabled={currentIndex === 0}
-            className="w-24"
+            className="w-28"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Trước
@@ -292,6 +324,7 @@ export default function PracticeRunner() {
               <Button
                 onClick={handleCheck}
                 disabled={!currentAnswer?.selected || isChecking}
+                className="px-8"
               >
                 <Check className="mr-2 h-4 w-4" />
                 Kiểm tra
@@ -307,7 +340,7 @@ export default function PracticeRunner() {
                 </Button>
               </div>
             ) : (
-              <Button onClick={handleNext}>
+              <Button onClick={handleNext} className="px-8">
                 Tiếp theo
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -318,7 +351,7 @@ export default function PracticeRunner() {
             variant="outline"
             onClick={handleNext}
             disabled={isLastQuestion}
-            className="w-24"
+            className="w-28"
           >
             Tiếp
             <ArrowRight className="ml-2 h-4 w-4" />
