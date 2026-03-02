@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Layers, Loader2 } from 'lucide-react';
 import { ChoiceItem } from './ChoiceItem';
-import { AIExplainButton } from './AIExplainButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { createFlashcardFromQuestion } from '@/features/flashcards/api';
 import { toast } from 'sonner';
@@ -164,47 +163,8 @@ export function QuestionCard({
           ))}
         </div>
 
-        {/* Explanation */}
-        {showResult && question.explanation && (
-          <div className="mt-6 p-4 rounded-xl bg-muted/50 border">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold text-sm flex items-center gap-2">
-                💡 Giải thích
-              </h4>
-              {!isCorrect && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCreateFlashcard}
-                  disabled={isCreatingFlashcard || flashcardCreated}
-                  className="gap-1.5 h-7 text-xs"
-                >
-                  {isCreatingFlashcard ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Layers className="w-3 h-3" />
-                  )}
-                  {flashcardCreated ? 'Đã thêm' : 'Tạo flashcard'}
-                </Button>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              <HtmlContent html={question.explanation} />
-            </p>
-          </div>
-        )}
-
-        {/* AI Explanation — always shown after answer is checked */}
-        {showResult && (
-          <AIExplainButton
-            question={question}
-            userAnswer={selectedAnswer}
-            className="mt-3"
-          />
-        )}
-
-        {/* Show flashcard button even without explanation for wrong answers */}
-        {showResult && !question.explanation && !isCorrect && (
+        {/* Flashcard button for wrong answers (no explanation) */}
+        {showResult && !isCorrect && (
           <div className="mt-4 flex justify-end">
             <Button
               size="sm"
