@@ -999,7 +999,8 @@ export const RichTextEditor = ({
             "[&_pre]:bg-[#1e1e2e] [&_pre]:text-[#cdd6f4] [&_pre]:p-4 [&_pre]:pt-8 [&_pre]:rounded-lg [&_pre]:font-mono [&_pre]:text-sm [&_pre]:overflow-x-auto [&_pre]:relative",
             "[&_code]:bg-transparent [&_code]:text-inherit [&_code]:p-0",
             "[&_a]:text-primary [&_a]:underline",
-            "[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md"
+            "[&_img]:max-w-full [&_img]:rounded-md",
+            "[&_.rte-img-wrap]:inline-block [&_.rte-img-wrap]:relative [&_.rte-img-wrap]:leading-none [&_.rte-img-wrap_img]:!h-auto [&_.rte-img-wrap_img]:block"
           )}
           style={{ minHeight }}
           onInput={handleContentChange}
@@ -1047,20 +1048,23 @@ export const RichTextEditor = ({
 
           /* ── Image resize wrapper & handle ── */
           .rte-img-wrap {
-            position: relative;
-            display: inline-block;
+            position: relative !important;
+            display: inline-block !important;
             line-height: 0;
             user-select: none;
+            vertical-align: middle;
           }
           .rte-img-wrap img {
-            display: block;
+            display: block !important;
+            max-width: 100%;
+            height: auto;
           }
           .rte-img-handle {
             position: absolute;
             bottom: 0;
             right: 0;
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             background: hsl(var(--primary));
             border: 2px solid hsl(var(--background));
             border-radius: 3px 0 4px 0;
@@ -1084,8 +1088,7 @@ export const RichTextEditor = ({
             border-radius: 1px;
             opacity: 0.7;
           }
-          .rte-img-wrap:hover .rte-img-handle,
-          .rte-img-wrap:focus-within .rte-img-handle {
+          .rte-img-wrap:hover .rte-img-handle {
             opacity: 1;
           }
           .rte-img-wrap:hover img {

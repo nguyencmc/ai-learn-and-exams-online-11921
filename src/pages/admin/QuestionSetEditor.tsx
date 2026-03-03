@@ -141,6 +141,30 @@ const QuestionSetEditor = () => {
     setLoading(false);
   };
 
+  // ── Image upload handler: lưu lên Supabase Storage "question-images" ───────
+  const handleImageUpload = async (file: File, _questionIndex: number, _field: string): Promise<string> => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const ext = file.name.split('.').pop() || 'jpg';
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const fileName = `${year}/${month}/${day}/${uniqueId}.${ext}`;
+
+    const { data, error } = await supabase.storage
+      .from('question-images')
+      .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+    if (error) throw new Error(error.message);
+
+    const { data: urlData } = supabase.storage
+      .from('question-images')
+      .getPublicUrl(data.path);
+
+    return urlData.publicUrl;
+  };
+  // ──────────────────────────────────────────────────────────────────────────
+
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
       setTags([...tags, tagInput.trim()]);
@@ -447,6 +471,7 @@ const QuestionSetEditor = () => {
               questions={questions}
               onQuestionsChange={setQuestions}
               defaultDifficulty={level}
+              onImageUpload={handleImageUpload}
               imageBucket="question-images"
             />
           </div>
