@@ -40,14 +40,16 @@ function getChoices(q: PracticeQuestion) {
 function RightPanel({
   question,
   answer,
+  onClickImage,
 }: {
   question?: PracticeQuestion;
   answer?: AnswerState | null;
+  onClickImage?: (src: string) => void;
 }) {
   const [aiText, setAiText] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
   const prevId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -122,10 +124,6 @@ function RightPanel({
 
   return (
     <div className="space-y-4">
-      {/* Lightbox */}
-      {lightboxSrc && (
-        <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
-      )}
 
       {/* Result banner */}
       <div
@@ -162,7 +160,7 @@ function RightPanel({
               <HtmlContent
                 html={optMap[letter] ?? ''}
                 className="text-sm leading-relaxed text-green-900 dark:text-green-100 flex-1"
-                onClickImage={setLightboxSrc}
+                onClickImage={onClickImage}
               />
             </div>
           ))}
@@ -179,7 +177,7 @@ function RightPanel({
             <HtmlContent
               html={question.explanation}
               className="text-sm leading-relaxed text-foreground/80 [&_img]:cursor-zoom-in [&_img]:rounded-md [&_img]:transition-opacity [&_img]:hover:opacity-80"
-              onClickImage={setLightboxSrc}
+              onClickImage={onClickImage}
             />
           </div>
         </div>
@@ -741,7 +739,7 @@ export default function PracticeRunner() {
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">
                   Đáp án & Giải thích
                 </p>
-                <RightPanel question={currentQuestion} answer={currentAnswer} />
+                <RightPanel question={currentQuestion} answer={currentAnswer} onClickImage={setLightboxSrc} />
               </div>
 
               {/* Info Card */}
