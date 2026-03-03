@@ -130,8 +130,8 @@ function RightPanel({
       {/* Result banner */}
       <div
         className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium ${answer.isCorrect
-            ? 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400'
-            : 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
+          ? 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400'
+          : 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
           }`}
       >
         {answer.isCorrect ? (
@@ -653,6 +653,7 @@ export default function PracticeRunner() {
                         disabled={currentAnswer?.isChecked || false}
                         isMultiSelect={isMultiSelect}
                         onSelect={handleSelectAnswer}
+                        onClickImage={setLightboxSrc}
                       />
                     ))}
                   </div>

@@ -13,6 +13,7 @@ interface ChoiceItemProps {
   disabled?: boolean;
   isMultiSelect?: boolean;
   onSelect: (id: string) => void;
+  onClickImage?: (src: string) => void;
 }
 
 export function ChoiceItem({
@@ -26,6 +27,7 @@ export function ChoiceItem({
   disabled,
   isMultiSelect = false,
   onSelect,
+  onClickImage,
 }: ChoiceItemProps) {
   // Check if this specific choice is one of the correct answers
   const correctAnswers = correctAnswer?.split(',').map(s => s.trim().toUpperCase()) || [];
@@ -97,7 +99,7 @@ export function ChoiceItem({
       >
         {label}
       </span>
-      <HtmlContent html={text} className="flex-1 text-foreground" />
+      <HtmlContent html={text} className="flex-1 text-foreground [&_img]:cursor-zoom-in [&_img]:hover:opacity-80 [&_img]:transition-opacity" onClickImage={onClickImage} />
       {showResult && isCorrectAnswer && (
         <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
       )}
