@@ -6,14 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/useToast';
-import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import { 
-  Play, 
-  RotateCcw, 
-  Zap, 
-  Clock, 
+import {
+  Play,
+  RotateCcw,
+  Zap,
+  Clock,
   AlertCircle,
   CheckCircle2,
   LogIn,
@@ -23,8 +20,10 @@ import {
   Target,
   TrendingUp,
   ArrowRight,
-  Loader2,
-  RefreshCw
+  RefreshCw,
+  Trophy,
+  Flame,
+  Star,
 } from 'lucide-react';
 
 interface InProgressSession {
@@ -49,46 +48,106 @@ interface Recommendation {
   title: string;
   description: string;
   priority: 'high' | 'medium' | 'low';
-  examId?: string;
+  href: string;
+  icon: 'target' | 'brain' | 'trending' | 'book' | 'trophy' | 'flame' | 'star';
 }
 
-interface SmartRecommendationsData {
-  summary: string;
-  strengths: string[];
-  improvements: string[];
-  recommendations: Recommendation[];
-  suggestedDifficulty: 'easy' | 'medium' | 'hard';
+// ── Thuật toán gợi ý thông minh (pure local) ────────────────────────────────
+interface UserStats {
+  totalAttempts: number;
+  correctCount: number;
+  wrongCount: number;
+  accuracy: number;
+  streakToday: boolean;
+  flashcardsDue: number;
+  inProgressSession: boolean;
+  wrongAnswerCount: number;
+  practicedSetIds: string[];
+  unpracticedSets: { id: string; title: string }[];
+  recentAccuracy7d: number;
+  daysActiveLast7: number;
 }
 
-// Check if date is today
+function buildRecommendations(stats: UserStats): Recommendation[] {
+  const recs: Recommendation[] = [];
+
+  if (stats.inProgressSession) {
+    recs.push({ type: 'exam', title: 'Tiếp tục bài đang làm', description: 'Bạn có bài thi chưa hoàn thành', priority: 'high', href: '/practice', icon: 'target' });
+  }
+
+  if (stats.wrongAnswerCount >= 5) {
+    recs.push({ type: 'review', title: 'Ôn lại câu sai', description: `${stats.wrongAnswerCount} câu sai cần củng cố ngay`, priority: 'high', href: '/practice/review', icon: 'trending' });
+  } else if (stats.wrongAnswerCount > 0) {
+    recs.push({ type: 'review', title: 'Ôn lại câu sai', description: `${stats.wrongAnswerCount} câu sai cần xem lại`, priority: 'medium', href: '/practice/review', icon: 'trending' });
+  }
+
+  if (stats.flashcardsDue >= 10) {
+    recs.push({ type: 'flashcard', title: 'Ôn flashcard hôm nay', description: `${stats.flashcardsDue} thẻ đến hạn, ôn ngay để không quên`, priority: 'high', href: '/flashcards/today', icon: 'brain' });
+  } else if (stats.flashcardsDue > 0) {
+    recs.push({ type: 'flashcard', title: 'Ôn flashcard', description: `${stats.flashcardsDue} thẻ đến hạn ôn tập`, priority: 'medium', href: '/flashcards/today', icon: 'brain' });
+  }
+
+  if (stats.totalAttempts >= 10 && stats.recentAccuracy7d < 50) {
+    recs.push({ type: 'practice', title: 'Luyện câu dễ để lấy đà', description: `Tỉ lệ đúng gần đây ${stats.recentAccuracy7d.toFixed(0)}% — ôn lại nền tảng`, priority: 'high', href: '/practice?difficulty=easy', icon: 'star' });
+  }
+
+  if (stats.totalAttempts >= 20 && stats.recentAccuracy7d >= 80) {
+    recs.push({ type: 'practice', title: 'Thử thách nâng cao', description: `Tỉ lệ đúng ${stats.recentAccuracy7d.toFixed(0)}% — bạn sẵn sàng câu khó!`, priority: 'medium', href: '/practice?difficulty=hard', icon: 'trophy' });
+  }
+
+  if (stats.unpracticedSets.length > 0) {
+    const set = stats.unpracticedSets[0];
+    recs.push({ type: 'practice', title: `Khám phá: ${set.title}`, description: 'Bộ đề bạn chưa thử lần nào', priority: stats.totalAttempts === 0 ? 'high' : 'low', href: `/practice/setup/${set.id}`, icon: 'book' });
+  }
+
+  if (!stats.streakToday && stats.daysActiveLast7 >= 3) {
+    recs.push({ type: 'practice', title: 'Giữ vững chuỗi học tập', description: 'Học ít nhất 5 câu hôm nay để không mất streak', priority: 'high', href: '/practice', icon: 'flame' });
+  }
+
+  if (stats.totalAttempts < 5) {
+    recs.push({ type: 'practice', title: 'Bắt đầu luyện tập ngay', description: 'Thử 10 câu đầu tiên để khám phá', priority: 'high', href: '/practice', icon: 'target' });
+  }
+
+  const seen = new Set<string>();
+  return recs
+    .filter(r => { if (seen.has(r.title)) return false; seen.add(r.title); return true; })
+    .sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.priority] - { high: 0, medium: 1, low: 2 }[b.priority]))
+    .slice(0, 3);
+}
+
+function buildSummary(stats: UserStats): string {
+  if (stats.totalAttempts === 0) return 'Bắt đầu luyện tập để nhận gợi ý cá nhân hoá! 🚀';
+  if (stats.recentAccuracy7d >= 80) return `Tuyệt vời! Tỉ lệ đúng 7 ngày gần nhất ${stats.recentAccuracy7d.toFixed(0)}% 🎉`;
+  if (stats.recentAccuracy7d >= 60) return `Khá tốt! Tỉ lệ đúng ${stats.recentAccuracy7d.toFixed(0)}% — tiếp tục duy trì nhé 💪`;
+  if (stats.totalAttempts >= 10) return `Tỉ lệ đúng ${stats.recentAccuracy7d.toFixed(0)}% — ôn lại câu sai để cải thiện 📚`;
+  return `Đã làm ${stats.totalAttempts} câu — luyện đều mỗi ngày để tiến bộ nhanh hơn!`;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 const isToday = (dateStr: string) => {
-  const date = new Date(dateStr);
-  const today = new Date();
-  return date.toDateString() === today.toDateString();
+  const d = new Date(dateStr);
+  return d.toDateString() === new Date().toDateString();
+};
+const isWithinDays = (dateStr: string, days: number) => {
+  return new Date(dateStr) >= new Date(Date.now() - days * 86400000);
 };
 
 export const PracticeTodayWidget = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
+
   const [loading, setLoading] = useState(true);
   const [inProgressSession, setInProgressSession] = useState<InProgressSession | null>(null);
   const [wrongAnswers, setWrongAnswers] = useState<WrongAnswerStats>({ count: 0, questionIds: [] });
   const [lastPracticeSet, setLastPracticeSet] = useState<LastPracticeSet | null>(null);
-  
-  // Smart recommendations state
-  const [smartData, setSmartData] = useState<SmartRecommendationsData | null>(null);
-  const [smartLoading, setSmartLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  // Moved useEffect after function definitions - see end of functions block
+  const [smartRecs, setSmartRecs] = useState<Recommendation[]>([]);
+  const [smartSummary, setSmartSummary] = useState('');
+  const [smartLoading, setSmartLoading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
-    
     try {
-      // Fetch in-progress exam session
       const { data: sessions } = await supabase
         .from('practice_exam_sessions')
         .select('id, set_id, started_at, total_questions')
@@ -96,12 +155,8 @@ export const PracticeTodayWidget = () => {
         .eq('status', 'in_progress')
         .order('started_at', { ascending: false })
         .limit(1);
+      if (sessions && sessions.length > 0) setInProgressSession(sessions[0]);
 
-      if (sessions && sessions.length > 0) {
-        setInProgressSession(sessions[0]);
-      }
-
-      // Fetch wrong answers (distinct question_ids)
       const { data: wrongAttempts } = await supabase
         .from('practice_attempts')
         .select('question_id')
@@ -109,45 +164,33 @@ export const PracticeTodayWidget = () => {
         .eq('is_correct', false)
         .order('created_at', { ascending: false })
         .limit(50);
-
       if (wrongAttempts && wrongAttempts.length > 0) {
-        const uniqueQuestionIds = [...new Set(wrongAttempts.map(a => a.question_id))].slice(0, 10);
-        setWrongAnswers({
-          count: uniqueQuestionIds.length,
-          questionIds: uniqueQuestionIds,
-        });
+        const uniqueIds = [...new Set(wrongAttempts.map(a => a.question_id))].slice(0, 10);
+        setWrongAnswers({ count: uniqueIds.length, questionIds: uniqueIds });
       }
 
-      // Fetch last practiced set (from attempts -> questions -> set_id)
       const { data: recentAttempts } = await supabase
         .from('practice_attempts')
         .select('question_id')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false })
         .limit(1);
-
       if (recentAttempts && recentAttempts.length > 0) {
-        // Get the question to find its set
         const { data: question } = await supabase
           .from('practice_questions')
           .select('set_id')
           .eq('id', recentAttempts[0].question_id)
           .maybeSingle();
-
         if (question?.set_id) {
           const { data: set } = await supabase
             .from('question_sets')
             .select('id, title')
             .eq('id', question.set_id)
             .maybeSingle();
-
-          if (set) {
-            setLastPracticeSet(set);
-          }
+          if (set) setLastPracticeSet(set);
         }
       }
 
-      // Fallback: get first published set if no recent practice
       if (!lastPracticeSet) {
         const { data: fallbackSet } = await supabase
           .from('question_sets')
@@ -155,170 +198,140 @@ export const PracticeTodayWidget = () => {
           .eq('is_published', true)
           .order('created_at', { ascending: false })
           .limit(1);
-
-        if (fallbackSet && fallbackSet.length > 0) {
-          setLastPracticeSet(fallbackSet[0]);
-        }
+        if (fallbackSet && fallbackSet.length > 0) setLastPracticeSet(fallbackSet[0]);
       }
     } catch (error) {
       console.error('Error fetching practice today data:', error);
     }
-
     setLoading(false);
   };
 
-  // Load cached recommendations or fetch new ones if first login today
-  const loadSmartRecommendations = async () => {
+  const computeSmartRecommendations = async () => {
     if (!user) return;
-    
     setSmartLoading(true);
     try {
-      // Check for cached recommendations
-      const { data: cached } = await supabase
-        .from('user_smart_recommendations')
-        .select('recommendations, generated_at')
+      // Lịch sử 30 ngày
+      const { data: attempts30d } = await supabase
+        .from('practice_attempts')
+        .select('is_correct, created_at, question_id')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString())
+        .limit(500);
 
-      if (cached && isToday(cached.generated_at)) {
-        // Use cached data if generated today
-        setSmartData(cached.recommendations as unknown as SmartRecommendationsData);
-        setLastUpdated(cached.generated_at);
-        setSmartLoading(false);
-        return;
+      const all = attempts30d ?? [];
+      const totalAttempts = all.length;
+      const correctCount = all.filter(a => a.is_correct).length;
+      const wrongCount = totalAttempts - correctCount;
+
+      const last7d = all.filter(a => isWithinDays(a.created_at, 7));
+      const recentAccuracy7d = last7d.length > 0 ? (last7d.filter(a => a.is_correct).length / last7d.length) * 100 : 0;
+      const daysActiveLast7 = new Set(last7d.map(a => new Date(a.created_at).toDateString())).size;
+      const streakToday = all.some(a => isToday(a.created_at));
+
+      // Flashcard đến hạn
+      const { count: flashcardsDue } = await supabase
+        .from('user_flashcard_progress')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .lte('next_review_at', new Date().toISOString());
+
+      // Bộ đề đã làm vs chưa làm
+      let practicedSetIds: string[] = [];
+      const qIds = all.map(a => a.question_id).slice(0, 100);
+      if (qIds.length > 0) {
+        const { data: practicedQs } = await supabase
+          .from('practice_questions')
+          .select('set_id')
+          .in('id', qIds);
+        practicedSetIds = [...new Set((practicedQs ?? []).map(q => q.set_id))];
       }
 
-      // First login today - generate new recommendations
-      await generateNewRecommendations();
-    } catch (error) {
-      console.error('Load smart recommendations error:', error);
+      const { data: allSets } = await supabase
+        .from('question_sets')
+        .select('id, title')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      const unpracticedSets = (allSets ?? []).filter(s => !practicedSetIds.includes(s.id));
+
+      // Câu sai
+      const { data: wrongData } = await supabase
+        .from('practice_attempts')
+        .select('question_id')
+        .eq('user_id', user.id)
+        .eq('is_correct', false)
+        .limit(50);
+      const wrongAnswerCount = new Set((wrongData ?? []).map(a => a.question_id)).size;
+
+      // Session đang dở
+      const { data: sesData } = await supabase
+        .from('practice_exam_sessions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status', 'in_progress')
+        .limit(1);
+
+      const stats: UserStats = {
+        totalAttempts, correctCount, wrongCount,
+        accuracy: totalAttempts > 0 ? (correctCount / totalAttempts) * 100 : 0,
+        streakToday,
+        flashcardsDue: flashcardsDue ?? 0,
+        inProgressSession: (sesData ?? []).length > 0,
+        wrongAnswerCount,
+        practicedSetIds,
+        unpracticedSets,
+        recentAccuracy7d,
+        daysActiveLast7,
+      };
+
+      setSmartRecs(buildRecommendations(stats));
+      setSmartSummary(buildSummary(stats));
+    } catch (err) {
+      console.error('Smart recommendations error:', err);
     } finally {
       setSmartLoading(false);
     }
   };
 
-  // Generate new AI recommendations and cache them
-  const generateNewRecommendations = async () => {
-    if (!user) return;
-    
-    setSmartLoading(true);
-    try {
-      const { data: result, error } = await supabase.functions.invoke('smart-recommendations', {
-        body: { userId: user.id },
-      });
-
-      if (error) throw error;
-      
-      setSmartData(result);
-      
-      // Cache the recommendations using upsert
-      const now = new Date().toISOString();
-      const { error: upsertError } = await supabase
-        .from('user_smart_recommendations')
-        .upsert({
-          user_id: user.id,
-          recommendations: result,
-          generated_at: now,
-        }, {
-          onConflict: 'user_id'
-        });
-
-      if (upsertError) {
-        console.error('Cache recommendations error:', upsertError);
-      } else {
-        setLastUpdated(now);
-      }
-    } catch (error) {
-      console.error('Generate smart recommendations error:', error);
-      toast({
-        title: 'Lỗi',
-        description: 'Không thể tạo gợi ý học tập',
-        variant: 'destructive',
-      });
-    } finally {
-      setSmartLoading(false);
-    }
-  };
-
-  // Manual refresh handler
-  const handleManualRefresh = async () => {
-    await generateNewRecommendations();
-    toast({
-      title: 'Đã cập nhật',
-      description: 'Gợi ý học tập đã được làm mới',
-    });
-  };
-
-  // Load data on component mount
   useEffect(() => {
     if (user) {
       fetchData();
-      loadSmartRecommendations();
+      computeSmartRecommendations();
     } else {
       setLoading(false);
     }
   }, [user]);
 
   const handleContinueExam = () => {
-    if (inProgressSession) {
-      navigate(`/practice/exam/${inProgressSession.set_id}`, {
-        state: { sessionId: inProgressSession.id }
-      });
-    }
+    if (inProgressSession) navigate(`/practice/exam/${inProgressSession.set_id}`, { state: { sessionId: inProgressSession.id } });
   };
-
-  const handleReviewWrong = () => {
-    navigate('/practice/review');
-  };
-
+  const handleReviewWrong = () => navigate('/practice/review');
   const handleQuickPractice = () => {
-    if (lastPracticeSet) {
-      navigate(`/practice/setup/${lastPracticeSet.id}`, {
-        state: { quickStart: true, questionCount: 10 }
-      });
-    }
+    if (lastPracticeSet) navigate(`/practice/setup/${lastPracticeSet.id}`, { state: { quickStart: true, questionCount: 10 } });
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'exam': return <BookOpen className="w-4 h-4" />;
-      case 'flashcard': return <Brain className="w-4 h-4" />;
-      case 'practice': return <Target className="w-4 h-4" />;
-      case 'review': return <TrendingUp className="w-4 h-4" />;
-      default: return <Sparkles className="w-4 h-4" />;
-    }
+  const getIcon = (icon: Recommendation['icon']) => {
+    const map: Record<string, React.ReactNode> = {
+      target: <Target className="w-4 h-4" />,
+      brain: <Brain className="w-4 h-4" />,
+      trending: <TrendingUp className="w-4 h-4" />,
+      book: <BookOpen className="w-4 h-4" />,
+      trophy: <Trophy className="w-4 h-4" />,
+      flame: <Flame className="w-4 h-4" />,
+      star: <Star className="w-4 h-4" />,
+    };
+    return map[icon] ?? <Sparkles className="w-4 h-4" />;
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-muted';
-    }
-  };
+  const getPriorityStyle = (priority: Recommendation['priority']) => ({
+    high: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-500/10 dark:text-red-400',
+    medium: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-400',
+    low: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-500/10 dark:text-green-400',
+  }[priority]);
 
-  const handleRecommendationClick = (rec: Recommendation) => {
-    switch (rec.type) {
-      case 'exam':
-        if (rec.examId) navigate(`/exams/${rec.examId}`);
-        else navigate('/exams');
-        break;
-      case 'flashcard':
-        navigate('/flashcards');
-        break;
-      case 'practice':
-        navigate('/practice');
-        break;
-      case 'review':
-        navigate('/practice/review');
-        break;
-      default:
-        navigate('/dashboard');
-    }
-  };
+  const getPriorityLabel = (priority: Recommendation['priority']) =>
+    ({ high: 'Ưu tiên', medium: 'Nên làm', low: 'Tùy chọn' }[priority]);
 
-  // Not logged in state
   if (!user) {
     return (
       <Card className="border-border/50">
@@ -332,14 +345,9 @@ export const PracticeTodayWidget = () => {
         <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
           <div className="text-center py-4 sm:py-6">
             <LogIn className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-muted-foreground mb-2 sm:mb-3" />
-            <p className="text-sm text-muted-foreground mb-3 sm:mb-4">
-              Đăng nhập để theo dõi tiến độ
-            </p>
+            <p className="text-sm text-muted-foreground mb-3 sm:mb-4">Đăng nhập để theo dõi tiến độ</p>
             <Link to="/auth">
-              <Button size="sm">
-                <LogIn className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                Đăng nhập
-              </Button>
+              <Button size="sm"><LogIn className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />Đăng nhập</Button>
             </Link>
           </div>
         </CardContent>
@@ -347,14 +355,12 @@ export const PracticeTodayWidget = () => {
     );
   }
 
-  // Loading state
   if (loading) {
     return (
       <Card className="border-border/50">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            Hôm nay học gì?
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />Hôm nay học gì?
           </CardTitle>
           <CardDescription className="text-xs sm:text-sm">Luyện tập mỗi ngày để tiến bộ</CardDescription>
         </CardHeader>
@@ -378,10 +384,9 @@ export const PracticeTodayWidget = () => {
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">Luyện tập mỗi ngày để tiến bộ</CardDescription>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => { fetchData(); loadSmartRecommendations(); }}
+          <Button
+            variant="ghost" size="sm"
+            onClick={() => { fetchData(); computeSmartRecommendations(); }}
             disabled={loading || smartLoading}
             className="h-8 w-8 p-0 flex-shrink-0"
           >
@@ -390,7 +395,8 @@ export const PracticeTodayWidget = () => {
         </div>
       </CardHeader>
       <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-3 sm:space-y-4">
-        {/* A) Continue Exam */}
+
+        {/* A) Bài thi đang làm dở */}
         <div className="p-3 sm:p-4 rounded-lg border border-border/50 bg-card hover:bg-accent/5 transition-colors">
           <div className="flex items-start gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
@@ -404,8 +410,7 @@ export const PracticeTodayWidget = () => {
                     1 bài chưa hoàn thành ({inProgressSession.total_questions || 0} câu)
                   </p>
                   <Button size="sm" onClick={handleContinueExam} className="gap-1 sm:gap-2 text-xs sm:text-sm h-8">
-                    <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                    Tiếp tục
+                    <Play className="w-3 h-3 sm:w-4 sm:h-4" />Tiếp tục
                   </Button>
                 </>
               ) : (
@@ -418,7 +423,7 @@ export const PracticeTodayWidget = () => {
           </div>
         </div>
 
-        {/* B) Review Wrong */}
+        {/* B) Ôn câu sai */}
         <div className="p-3 sm:p-4 rounded-lg border border-border/50 bg-card hover:bg-accent/5 transition-colors">
           <div className="flex items-start gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
@@ -429,24 +434,22 @@ export const PracticeTodayWidget = () => {
               {wrongAnswers.count > 0 ? (
                 <>
                   <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
-                    <Badge variant="destructive" className="mr-1 text-[10px] sm:text-xs">{wrongAnswers.count}</Badge> câu sai cần ôn
+                    <Badge variant="destructive" className="mr-1 text-[10px] sm:text-xs">{wrongAnswers.count}</Badge>câu sai cần ôn
                   </p>
                   <Button size="sm" variant="outline" onClick={handleReviewWrong} className="gap-1 sm:gap-2 text-xs sm:text-sm h-8">
-                    <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
-                    Ôn ngay
+                    <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />Ôn ngay
                   </Button>
                 </>
               ) : (
                 <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 sm:gap-2">
-                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
-                  Chưa có câu sai
+                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />Chưa có câu sai
                 </p>
               )}
             </div>
           </div>
         </div>
 
-        {/* C) Quick Practice */}
+        {/* C) Luyện nhanh */}
         <div className="p-3 sm:p-4 rounded-lg border border-border/50 bg-card hover:bg-accent/5 transition-colors">
           <div className="flex items-start gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -456,24 +459,19 @@ export const PracticeTodayWidget = () => {
               <h4 className="font-medium text-foreground mb-1 text-sm sm:text-base">Luyện nhanh 10 câu</h4>
               {lastPracticeSet ? (
                 <>
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 truncate">
-                    {lastPracticeSet.title}
-                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 truncate">{lastPracticeSet.title}</p>
                   <Button size="sm" variant="secondary" onClick={handleQuickPractice} className="gap-1 sm:gap-2 text-xs sm:text-sm h-8">
-                    <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
-                    Luyện ngay
+                    <Zap className="w-3 h-3 sm:w-4 sm:h-4" />Luyện ngay
                   </Button>
                 </>
               ) : (
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
-                    <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500 flex-shrink-0" />
-                    Chưa có bộ đề
+                    <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500 flex-shrink-0" />Chưa có bộ đề
                   </p>
                   <Link to="/practice">
                     <Button size="sm" variant="outline" className="gap-1 sm:gap-2 text-xs sm:text-sm h-8">
-                      <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
-                      Khám phá
+                      <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />Khám phá
                     </Button>
                   </Link>
                 </div>
@@ -482,60 +480,54 @@ export const PracticeTodayWidget = () => {
           </div>
         </div>
 
-        {/* D) Smart Recommendations */}
+        {/* D) Gợi ý thông minh (thuật toán local) */}
         <div className="pt-3 sm:pt-4 border-t border-border/50">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div className="flex items-center gap-1 sm:gap-2 min-w-0">
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
-              <h4 className="font-medium text-foreground text-sm sm:text-base truncate">Gợi ý thông minh</h4>
+              <h4 className="font-medium text-foreground text-sm sm:text-base truncate">Gợi ý cho bạn</h4>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              {lastUpdated && (
-                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
-                  {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true, locale: vi })}
-                </span>
-              )}
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={handleManualRefresh}
-                disabled={smartLoading}
-                className="h-7 w-7 p-0"
-                title="Làm mới gợi ý"
-              >
-                <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${smartLoading ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
+            <Button
+              variant="ghost" size="sm"
+              onClick={computeSmartRecommendations}
+              disabled={smartLoading}
+              className="h-7 w-7 p-0"
+              title="Làm mới gợi ý"
+            >
+              <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${smartLoading ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
-          
+
           {smartLoading ? (
-            <div className="flex items-center justify-center py-4 sm:py-6">
-              <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-primary" />
-              <span className="ml-2 text-xs sm:text-sm text-muted-foreground">Đang phân tích...</span>
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
             </div>
-          ) : smartData ? (
+          ) : smartRecs.length > 0 ? (
             <div className="space-y-2 sm:space-y-3">
-              {/* Summary */}
-              <div className="p-2 sm:p-3 bg-primary/5 rounded-lg text-xs sm:text-sm">
-                {smartData.summary}
+              {/* Tóm tắt */}
+              <div className="p-2 sm:p-3 bg-primary/5 rounded-lg text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                {smartSummary}
               </div>
-              
-              {/* Recommendations */}
-              {smartData.recommendations.slice(0, 3).map((rec, i) => (
-                <div 
+
+              {/* Danh sách gợi ý */}
+              {smartRecs.map((rec, i) => (
+                <div
                   key={i}
                   className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border border-border/50 hover:bg-accent/5 cursor-pointer transition-colors"
-                  onClick={() => handleRecommendationClick(rec)}
+                  onClick={() => navigate(rec.href)}
                 >
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                    {getTypeIcon(rec.type)}
+                    {getIcon(rec.icon)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-xs sm:text-sm truncate">{rec.title}</p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{rec.description}</p>
                   </div>
-                  <Badge variant="outline" className={`${getPriorityColor(rec.priority)} text-[9px] sm:text-xs hidden xs:inline-flex`}>
-                    {rec.priority === 'high' ? 'Ưu tiên' : rec.priority === 'medium' ? 'Nên làm' : 'Tùy chọn'}
+                  <Badge variant="outline" className={`${getPriorityStyle(rec.priority)} text-[9px] sm:text-xs hidden xs:inline-flex`}>
+                    {getPriorityLabel(rec.priority)}
                   </Badge>
                   <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
                 </div>
@@ -543,10 +535,12 @@ export const PracticeTodayWidget = () => {
             </div>
           ) : (
             <div className="text-center py-3 sm:py-4">
-              <p className="text-xs sm:text-sm text-muted-foreground">Chưa có dữ liệu gợi ý</p>
-              <Button variant="ghost" size="sm" className="mt-2 text-xs h-8" onClick={generateNewRecommendations}>
-                Tạo gợi ý
-              </Button>
+              <p className="text-xs sm:text-sm text-muted-foreground">Bắt đầu luyện tập để nhận gợi ý cá nhân hoá</p>
+              <Link to="/practice">
+                <Button variant="ghost" size="sm" className="mt-2 text-xs h-8 gap-1.5">
+                  <Target className="w-3 h-3" />Bắt đầu ngay
+                </Button>
+              </Link>
             </div>
           )}
         </div>

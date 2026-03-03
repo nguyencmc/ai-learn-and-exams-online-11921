@@ -66,88 +66,6 @@ function injectCopyButtons(container: HTMLElement) {
   });
 }
 
-/** Wrap ảnh trong resize container, thêm drag handle góc dưới-phải */
-function makeImagesResizable(container: HTMLElement) {
-  container.querySelectorAll<HTMLImageElement>("img").forEach((img) => {
-    if (img.dataset.resizeWrapped) return;
-    img.dataset.resizeWrapped = "1";
-
-    // Đợi ảnh load để lấy naturalWidth
-    const doWrap = () => {
-      const naturalW = img.naturalWidth || img.width || 300;
-      const maxW = container.clientWidth || 800;
-      const initW = Math.min(naturalW, maxW);
-
-      // Tạo wrapper
-      const wrapper = document.createElement("div");
-      wrapper.className = "hc-img-wrapper";
-      wrapper.style.width = initW + "px";
-      wrapper.style.maxWidth = "100%";
-
-      // Tạo handle
-      const handle = document.createElement("div");
-      handle.className = "hc-resize-handle";
-      handle.title = "Kéo để thay đổi kích thước";
-
-      // Drag logic
-      let startX = 0;
-      let startW = 0;
-      let dragging = false;
-
-      const onMouseMove = (e: MouseEvent) => {
-        if (!dragging) return;
-        const dx = e.clientX - startX;
-        const newW = Math.max(80, Math.min(startW + dx, container.clientWidth || 2000));
-        wrapper.style.width = newW + "px";
-      };
-      const onMouseUp = () => {
-        dragging = false;
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
-        document.body.style.userSelect = "";
-        document.body.style.cursor = "";
-      };
-      handle.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragging = true;
-        startX = e.clientX;
-        startW = wrapper.offsetWidth;
-        document.body.style.userSelect = "none";
-        document.body.style.cursor = "ew-resize";
-        document.addEventListener("mousemove", onMouseMove);
-        document.addEventListener("mouseup", onMouseUp);
-      });
-
-      // Touch support
-      let touchStartX = 0;
-      let touchStartW = 0;
-      handle.addEventListener("touchstart", (e) => {
-        e.stopPropagation();
-        touchStartX = e.touches[0].clientX;
-        touchStartW = wrapper.offsetWidth;
-      }, { passive: true });
-      handle.addEventListener("touchmove", (e) => {
-        const dx = e.touches[0].clientX - touchStartX;
-        const newW = Math.max(80, Math.min(touchStartW + dx, container.clientWidth || 2000));
-        wrapper.style.width = newW + "px";
-      }, { passive: true });
-
-      img.parentNode?.insertBefore(wrapper, img);
-      wrapper.appendChild(img);
-      wrapper.appendChild(handle);
-    };
-
-    if (img.complete && img.naturalWidth > 0) {
-      doWrap();
-    } else {
-      img.addEventListener("load", doWrap, { once: true });
-      // fallback nếu ảnh đã load nhưng naturalWidth chưa sẵn
-      setTimeout(doWrap, 400);
-    }
-  });
-}
-
 /** Inject lazy loading, decoding, onerror và Supabase transform vào tất cả <img> */
 function optimizeImages(container: HTMLElement, onClickImage?: (src: string) => void) {
   container.querySelectorAll<HTMLImageElement>("img").forEach((img) => {
@@ -205,7 +123,6 @@ export const HtmlContent = ({ html, className, onClickImage }: HtmlContentProps)
     if (!ref.current) return;
     injectCopyButtons(ref.current);
     optimizeImages(ref.current, onClickImage);
-    makeImagesResizable(ref.current);
   }, [html, onClickImage]);
 
   if (!html) return null;
@@ -216,7 +133,6 @@ export const HtmlContent = ({ html, className, onClickImage }: HtmlContentProps)
         ref={ref}
         className={cn(
           "prose prose-sm max-w-none dark:prose-invert",
-          "[&_.hc-img-wrapper]:my-2 [&_.hc-img-wrapper]:max-w-full",
           "[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md",
           "[&_a]:text-primary [&_a]:underline",
           "[&_p]:my-0 [&_ul]:my-1 [&_ol]:my-1",
@@ -227,53 +143,6 @@ export const HtmlContent = ({ html, className, onClickImage }: HtmlContentProps)
         dangerouslySetInnerHTML={{ __html: html }}
       />
       <style>{`
-        /* ── Resizable image wrapper ── */
-        .hc-img-wrapper {
-          position: relative;
-          display: inline-block;
-          line-height: 0;
-          border-radius: 6px;
-          transition: box-shadow 0.15s;
-        }
-        .hc-img-wrapper:hover {
-          box-shadow: 0 0 0 2px rgba(99,102,241,0.45);
-        }
-        .hc-img-wrapper img {
-          display: block;
-          width: 100%;
-          height: auto;
-          border-radius: 6px;
-        }
-        /* Resize handle — góc dưới-phải */
-        .hc-resize-handle {
-          position: absolute;
-          bottom: 3px;
-          right: 3px;
-          width: 18px;
-          height: 18px;
-          cursor: ew-resize;
-          opacity: 0;
-          transition: opacity 0.15s;
-          border-radius: 3px;
-          background: rgba(99,102,241,0.75);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 20;
-        }
-        .hc-resize-handle::after {
-          content: '';
-          display: block;
-          width: 8px;
-          height: 8px;
-          border-right: 2px solid #fff;
-          border-bottom: 2px solid #fff;
-          border-radius: 1px;
-        }
-        .hc-img-wrapper:hover .hc-resize-handle,
-        .hc-img-wrapper:focus-within .hc-resize-handle {
-          opacity: 1;
-        }
         /* ── Copy button ── */
         .hc-copy-btn {
           position: absolute;

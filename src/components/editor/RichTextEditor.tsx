@@ -217,6 +217,122 @@ export const RichTextEditor = ({
 
   const htmlValue = content ?? value ?? "";
 
+  // ── Inject resize handles on every <img> inside the editor ─────────────
+  const injectImageResizeHandles = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.querySelectorAll<HTMLImageElement>("img").forEach((img) => {
+      if (img.dataset.resizeInjected) return;
+      img.dataset.resizeInjected = "true";
+
+      // Make sure parent can be relative-positioned for the handle overlay
+      // We use a trick: insert a non-editable overlay sibling that follows the img
+      // But since contenteditable wraps are fragile, we attach the handle *inside*
+      // a span wrapper only in the DOM (not saved to HTML).
+
+      // Strategy: wrap img in an inline-block span with class rte-img-wrap
+      // only if not already wrapped.
+      const parent = img.parentNode;
+      if (!parent) return;
+
+      // Skip if already inside our wrapper
+      if ((parent as HTMLElement).classList?.contains("rte-img-wrap")) return;
+
+      const wrap = document.createElement("span");
+      wrap.className = "rte-img-wrap";
+      wrap.contentEditable = "false";
+      wrap.setAttribute("data-rte-wrap", "true");
+      parent.insertBefore(wrap, img);
+      wrap.appendChild(img);
+
+      const handle = document.createElement("span");
+      handle.className = "rte-img-handle";
+      handle.contentEditable = "false";
+      handle.title = "Kéo để thay đổi kích thước";
+      wrap.appendChild(handle);
+
+      // ── Mouse drag ──
+      handle.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const startX = e.clientX;
+        const startW = img.offsetWidth  || img.naturalWidth  || 200;
+        const startH = img.offsetHeight || img.naturalHeight || 150;
+        const aspectRatio = startH / startW;
+
+        const onMove = (ev: MouseEvent) => {
+          const dx = ev.clientX - startX;
+          const newW = Math.max(40, startW + dx);
+          const newH = Math.round(newW * aspectRatio);
+          img.style.width  = newW + "px";
+          img.style.height = newH + "px";
+          img.width  = newW;
+          img.height = newH;
+        };
+
+        const onUp = () => {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          // Fire onChange so parent saves updated HTML
+          // (inline clean to avoid circular dependency with getCleanHtml)
+          if (editorRef.current && onChange) {
+            isInternalChange.current = true;
+            const c = editorRef.current.cloneNode(true) as HTMLElement;
+            c.querySelectorAll(".rte-copy-btn").forEach(b => b.remove());
+            c.querySelectorAll("pre").forEach(p => (p as HTMLElement).style.removeProperty("position"));
+            c.querySelectorAll<HTMLElement>(".rte-img-wrap").forEach(w => { const i = w.querySelector("img"); if (i) w.replaceWith(i); else w.remove(); });
+            onChange(c.innerHTML);
+          }
+        };
+
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      });
+
+      // ── Touch drag ──
+      handle.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const touch = e.touches[0];
+        const startX = touch.clientX;
+        const startW = img.offsetWidth  || img.naturalWidth  || 200;
+        const startH = img.offsetHeight || img.naturalHeight || 150;
+        const aspectRatio = startH / startW;
+
+        const onMove = (ev: TouchEvent) => {
+          const t = ev.touches[0];
+          const dx = t.clientX - startX;
+          const newW = Math.max(40, startW + dx);
+          const newH = Math.round(newW * aspectRatio);
+          img.style.width  = newW + "px";
+          img.style.height = newH + "px";
+          img.width  = newW;
+          img.height = newH;
+        };
+
+        const onEnd = () => {
+          document.removeEventListener("touchmove", onMove);
+          document.removeEventListener("touchend", onEnd);
+          if (editorRef.current && onChange) {
+            isInternalChange.current = true;
+            const c = editorRef.current.cloneNode(true) as HTMLElement;
+            c.querySelectorAll(".rte-copy-btn").forEach(b => b.remove());
+            c.querySelectorAll("pre").forEach(p => (p as HTMLElement).style.removeProperty("position"));
+            c.querySelectorAll<HTMLElement>(".rte-img-wrap").forEach(w => { const i = w.querySelector("img"); if (i) w.replaceWith(i); else w.remove(); });
+            onChange(c.innerHTML);
+          }
+        };
+
+        document.addEventListener("touchmove", onMove, { passive: false });
+        document.addEventListener("touchend", onEnd);
+      }, { passive: false });
+    });
+  }, [onChange]);
+  // ──────────────────────────────────────────────────────────────────────────
+
   // ── Inject copy buttons into every <pre> block inside the editor ──────────
   const injectCopyButtons = useCallback(() => {
     const editor = editorRef.current;
@@ -250,17 +366,31 @@ export const RichTextEditor = ({
     });
   }, []);
 
-  // ── Get clean HTML without injected copy buttons (for saving) ────────────
+  // ── Get clean HTML without injected UI (copy buttons, resize wrappers) ────
   const getCleanHtml = useCallback((): string => {
     const editor = editorRef.current;
     if (!editor) return "";
-    // Clone DOM, strip all copy buttons, return clean HTML
+    // Clone DOM so we don't mutate the live editor
     const clone = editor.cloneNode(true) as HTMLElement;
+
+    // Strip copy buttons
     clone.querySelectorAll(".rte-copy-btn").forEach(btn => btn.remove());
-    // Also remove inline position:relative style added to <pre>
+    // Remove inline position:relative style added to <pre>
     clone.querySelectorAll("pre").forEach(pre => {
       (pre as HTMLElement).style.removeProperty("position");
     });
+
+    // Unwrap rte-img-wrap: replace <span.rte-img-wrap><img ...><span.rte-img-handle/></span>
+    // with just the <img> (keeping its width/height attributes set during resize)
+    clone.querySelectorAll<HTMLElement>(".rte-img-wrap").forEach((wrap) => {
+      const img = wrap.querySelector("img");
+      if (img) {
+        wrap.replaceWith(img);
+      } else {
+        wrap.remove();
+      }
+    });
+
     return clone.innerHTML;
   }, []);
   // ──────────────────────────────────────────────────────────────────────────
@@ -277,7 +407,8 @@ export const RichTextEditor = ({
       editor.innerHTML = htmlValue;
     }
     injectCopyButtons();
-  }, [htmlValue, injectCopyButtons]);
+    injectImageResizeHandles();
+  }, [htmlValue, injectCopyButtons, injectImageResizeHandles]);
   // ──────────────────────────────────────────────────────────────────────────
 
   const execCommand = useCallback((command: string, cmdValue?: string) => {
@@ -288,7 +419,8 @@ export const RichTextEditor = ({
       onChange(getCleanHtml());
     }
     injectCopyButtons();
-  }, [onChange, injectCopyButtons, getCleanHtml]);
+    injectImageResizeHandles();
+  }, [onChange, injectCopyButtons, injectImageResizeHandles, getCleanHtml]);
 
   // ── Save / restore cursor selection (mất khi click Popover) ──────────────
   const saveSelection = useCallback(() => {
@@ -326,7 +458,8 @@ export const RichTextEditor = ({
       onChange(getCleanHtml());
     }
     injectCopyButtons();
-  }, [restoreSelection, onChange, getCleanHtml, injectCopyButtons]);
+    injectImageResizeHandles();
+  }, [restoreSelection, onChange, getCleanHtml, injectCopyButtons, injectImageResizeHandles]);
   // ──────────────────────────────────────────────────────────────────────────
 
   const handleContentChange = useCallback(() => {
@@ -335,7 +468,8 @@ export const RichTextEditor = ({
       onChange(getCleanHtml());
     }
     injectCopyButtons();
-  }, [onChange, injectCopyButtons, getCleanHtml]);
+    injectImageResizeHandles();
+  }, [onChange, injectCopyButtons, injectImageResizeHandles, getCleanHtml]);
 
   const formatBlock = useCallback((tag: string) => {
     execCommand("formatBlock", tag === "p" ? "p" : tag);
@@ -909,6 +1043,55 @@ export const RichTextEditor = ({
             background: rgba(166, 227, 161, 0.18) !important;
             color: #a6e3a1 !important;
             border-color: rgba(166, 227, 161, 0.4) !important;
+          }
+
+          /* ── Image resize wrapper & handle ── */
+          .rte-img-wrap {
+            position: relative;
+            display: inline-block;
+            line-height: 0;
+            user-select: none;
+          }
+          .rte-img-wrap img {
+            display: block;
+          }
+          .rte-img-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 14px;
+            height: 14px;
+            background: hsl(var(--primary));
+            border: 2px solid hsl(var(--background));
+            border-radius: 3px 0 4px 0;
+            cursor: se-resize;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 20;
+            touch-action: none;
+          }
+          .rte-img-handle::after {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            background: repeating-linear-gradient(
+              -45deg,
+              transparent,
+              transparent 1px,
+              hsl(var(--primary-foreground)) 1px,
+              hsl(var(--primary-foreground)) 2px
+            );
+            border-radius: 1px;
+            opacity: 0.7;
+          }
+          .rte-img-wrap:hover .rte-img-handle,
+          .rte-img-wrap:focus-within .rte-img-handle {
+            opacity: 1;
+          }
+          .rte-img-wrap:hover img {
+            outline: 2px solid hsl(var(--primary) / 0.5);
+            outline-offset: 1px;
+            border-radius: 4px;
           }
         `}</style>
       </div>

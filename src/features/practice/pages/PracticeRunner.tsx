@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import {
   ArrowLeft, ArrowRight, Check, RotateCcw, Trophy, Target,
-  BrainCircuit, CheckCircle2, XCircle, Sparkles, Loader2, RefreshCw, Flag,
+  BrainCircuit, CheckCircle2, XCircle, Sparkles, Loader2, RefreshCw,
   Shield, Info, CheckCircle, Circle, ChevronLeft, ChevronRight,
+  LayoutGrid, FileText, Lightbulb,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePracticeQuestions } from '../hooks/usePracticeQuestions';
@@ -49,7 +49,6 @@ function RightPanel({
   const [aiText, setAiText] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-
   const prevId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -113,14 +112,6 @@ function RightPanel({
   const correctLetters = question.correct_answer
     .split(',')
     .map((s) => s.trim().toUpperCase());
-  const optMap: Record<string, string | null | undefined> = {
-    A: question.option_a,
-    B: question.option_b,
-    C: question.option_c,
-    D: question.option_d,
-    E: question.option_e,
-    F: question.option_f,
-  };
 
   return (
     <div className="space-y-4">
@@ -143,26 +134,19 @@ function RightPanel({
         )}
       </div>
 
-      {/* Đáp án đúng */}
+      {/* Đáp án đúng — chỉ hiện chữ cái, không hiện nội dung */}
       <div>
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
           Đáp án đúng
         </p>
-        <div className="space-y-1.5">
+        <div className="flex flex-wrap gap-2">
           {correctLetters.map((letter) => (
-            <div
+            <span
               key={letter}
-              className="flex items-start gap-2.5 rounded-lg bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 px-3 py-2.5"
+              className="w-8 h-8 rounded-full bg-green-500 text-white text-sm font-bold flex items-center justify-center"
             >
-              <span className="shrink-0 w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">
-                {letter}
-              </span>
-              <HtmlContent
-                html={optMap[letter] ?? ''}
-                className="text-sm leading-relaxed text-green-900 dark:text-green-100 flex-1"
-                onClickImage={onClickImage}
-              />
-            </div>
+              {letter}
+            </span>
           ))}
         </div>
       </div>
@@ -173,10 +157,10 @@ function RightPanel({
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             💡 Giải thích
           </p>
-          <div className="rounded-lg bg-muted/40 border px-3 py-3">
+          <div className="rounded-lg bg-muted/40 border px-3 py-3 overflow-hidden">
             <HtmlContent
               html={question.explanation}
-              className="text-sm leading-relaxed text-foreground/80 [&_img]:cursor-zoom-in [&_img]:rounded-md [&_img]:transition-opacity [&_img]:hover:opacity-80"
+              className="text-sm leading-relaxed text-foreground/80 [&_img]:max-w-full [&_img]:w-full [&_img]:h-auto [&_img]:cursor-zoom-in [&_img]:rounded-md [&_img]:transition-opacity [&_img]:hover:opacity-80 [&_table]:w-full [&_table]:overflow-x-auto [&_pre]:overflow-x-auto [&_p]:break-words"
               onClickImage={onClickImage}
             />
           </div>
@@ -250,6 +234,7 @@ export default function PracticeRunner() {
   const [isFinished, setIsFinished] = useState(false);
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<'question' | 'explanation' | 'nav'>('question');
 
   const currentQuestion = questions?.[currentIndex];
   const currentAnswer = currentQuestion ? answers[currentQuestion.id] : null;
@@ -317,12 +302,17 @@ export default function PracticeRunner() {
   }, [currentQuestion, currentAnswer, user]);
 
   const handleNext = useCallback(() => {
-    if (questions && currentIndex < questions.length - 1)
+    if (questions && currentIndex < questions.length - 1) {
       setCurrentIndex((i) => i + 1);
+      setMobileTab('question');
+    }
   }, [currentIndex, questions]);
 
   const handlePrev = useCallback(() => {
-    if (currentIndex > 0) setCurrentIndex((i) => i - 1);
+    if (currentIndex > 0) {
+      setCurrentIndex((i) => i - 1);
+      setMobileTab('question');
+    }
   }, [currentIndex]);
 
   const handleRestart = () => {
@@ -484,43 +474,50 @@ export default function PracticeRunner() {
         <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
       )}
 
-      {/* ══ TOP HEADER (sticky, matching ExamTaking) ══════════════════════════ */}
+      {/* ══ TOP HEADER ══════════════════════════════════════════════════════ */}
       <header className="bg-card border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Left: Logo & Title */}
-            <div className="flex items-center gap-3">
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            {/* Left */}
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-1.5 text-muted-foreground hover:text-foreground -ml-1"
+                className="gap-1.5 text-muted-foreground hover:text-foreground -ml-1 h-9 w-9 p-0 sm:w-auto sm:px-3"
                 onClick={() => navigate(`/practice/setup/${setId}`)}
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Shield className="w-4 h-4 text-primary-foreground" />
+              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+                <Shield className="w-3.5 h-3.5 text-primary-foreground" />
               </div>
-              <h1 className="font-semibold text-foreground hidden sm:block truncate max-w-[200px] lg:max-w-none">
+              <h1 className="font-semibold text-foreground hidden sm:block truncate max-w-[160px] lg:max-w-none text-sm">
                 Luyện tập
               </h1>
             </div>
 
-            {/* Center: Question Counter */}
-            <div className="text-sm text-muted-foreground">
-              Câu <span className="font-semibold text-foreground">{currentIndex + 1}</span> / {questions.length}
+            {/* Center: counter + progress */}
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-sm font-semibold text-foreground">
+                {currentIndex + 1} <span className="text-muted-foreground font-normal">/ {questions.length}</span>
+              </span>
+              {/* mini progress bar on mobile */}
+              <div className="w-24 h-1 rounded-full bg-muted overflow-hidden lg:hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
 
             {/* Right: Stats */}
-            <div className="flex items-center gap-4 text-sm">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-muted-foreground hidden sm:inline">Đúng:</span>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
                 <strong className="text-green-600">{stats.correct}</strong>
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-red-500" />
-                <span className="text-muted-foreground hidden sm:inline">Sai:</span>
+              <span className="flex items-center gap-1">
+                <XCircle className="w-3.5 h-3.5 text-red-500" />
                 <strong className="text-red-600">{stats.wrong}</strong>
               </span>
             </div>
@@ -528,33 +525,29 @@ export default function PracticeRunner() {
         </div>
       </header>
 
-      {/* ══ 3-COLUMN BODY ════════════════════════════════════════════════════ */}
-      <div className="flex-1 container mx-auto px-4 py-6">
+      {/* ══ 3-COLUMN BODY (desktop) ══════════════════════════════════════════ */}
+      <div className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-40 lg:pb-6">
         <div className="grid lg:grid-cols-[200px_1fr_280px] gap-6">
 
-          {/* ── LEFT SIDEBAR: Question Navigation ────────────────────────────── */}
+          {/* ── LEFT SIDEBAR (desktop only) ──────────────────────────────── */}
           <aside className="hidden lg:block">
             <div className="bg-card border rounded-xl p-4 sticky top-24">
               <h3 className="font-semibold text-foreground mb-2">Điều hướng câu hỏi</h3>
               <p className="text-xs text-muted-foreground mb-4">Nhấn vào câu để chuyển</p>
-
-              {/* Legend */}
               <div className="flex flex-col gap-1 mb-4 text-xs">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span className="text-muted-foreground">Đã trả lời ({correctCount})</span>
+                  <span className="text-muted-foreground">Đúng ({correctCount})</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <XCircle className="w-3 h-3 text-red-500" />
-                  <span className="text-muted-foreground">Trả lời sai ({wrongCount})</span>
+                  <span className="text-muted-foreground">Sai ({wrongCount})</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Circle className="w-3 h-3 text-muted-foreground" />
                   <span className="text-muted-foreground">Chưa làm ({unansweredCount})</span>
                 </div>
               </div>
-
-              {/* Question Grid */}
               <div className="grid grid-cols-5 gap-2">
                 {questions.map((q, idx) => {
                   const a = answers[q.id];
@@ -583,131 +576,214 @@ export default function PracticeRunner() {
             </div>
           </aside>
 
-          {/* ── CENTER: Question Content ──────────────────────────────────────── */}
+          {/* ── CENTER: Question Content ──────────────────────────────────── */}
           <main className="min-w-0">
-            {/* Question Card */}
-            <div className="bg-card border rounded-xl overflow-hidden">
-              {/* Question Header */}
-              <div className="px-6 py-4 border-b flex items-center gap-3">
-                <Badge variant="outline" className={`uppercase text-xs font-semibold ${diff.cls} border-0`}>
-                  {diff.label}
-                </Badge>
-                {isMultiSelect ? (
-                  <Badge variant="secondary" className="text-xs">
-                    Nhiều đáp án
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs">
-                    Một đáp án
-                  </Badge>
+
+            {/* ── MOBILE TAB BAR ─────────────────────────────────────────── */}
+            <div className="lg:hidden flex rounded-xl bg-muted p-1 mb-4 gap-1">
+              <button
+                onClick={() => setMobileTab('question')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                  mobileTab === 'question'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Câu hỏi
+              </button>
+              <button
+                onClick={() => setMobileTab('explanation')}
+                disabled={!currentAnswer?.isChecked}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all relative ${
+                  mobileTab === 'explanation'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : currentAnswer?.isChecked
+                      ? 'text-muted-foreground'
+                      : 'text-muted-foreground/40 cursor-not-allowed'
+                }`}
+              >
+                <Lightbulb className="w-3.5 h-3.5" />
+                Giải thích
+                {currentAnswer?.isChecked && mobileTab !== 'explanation' && (
+                  <span className="absolute top-1.5 right-3 w-1.5 h-1.5 rounded-full bg-primary" />
                 )}
+              </button>
+              <button
+                onClick={() => setMobileTab('nav')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                  mobileTab === 'nav'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                Điều hướng
+              </button>
+            </div>
+
+            {/* ── MOBILE: Nav tab ────────────────────────────────────────── */}
+            {mobileTab === 'nav' && (
+              <div className="lg:hidden bg-card border rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-foreground text-sm">Câu hỏi</h3>
+                  <div className="flex gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{correctCount} đúng</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{wrongCount} sai</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted-foreground/40 inline-block" />{unansweredCount} chưa</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-2">
+                  {questions.map((q, idx) => {
+                    const a = answers[q.id];
+                    const isCurrent = idx === currentIndex;
+                    const isRight = a?.isChecked && a.isCorrect;
+                    const isWrong = a?.isChecked && !a.isCorrect;
+                    return (
+                      <button
+                        key={q.id}
+                        onClick={() => { setCurrentIndex(idx); setMobileTab('question'); }}
+                        className={`aspect-square rounded-lg text-xs font-semibold transition-all flex items-center justify-center
+                          ${isCurrent
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1'
+                            : isRight
+                              ? 'bg-green-500/20 text-green-700 border border-green-400/40'
+                              : isWrong
+                                ? 'bg-red-500/20 text-red-700 border border-red-400/40'
+                                : 'bg-muted text-muted-foreground border border-border'
+                          }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 pt-3 border-t flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">{answeredCount} / {questions.length} câu đã trả lời</span>
+                  <Button
+                    size="sm"
+                    onClick={() => setIsFinished(true)}
+                    disabled={answeredCount === 0}
+                    className="gap-1.5"
+                  >
+                    <Trophy className="w-3.5 h-3.5" />
+                    Kết quả
+                  </Button>
+                </div>
               </div>
+            )}
 
-              {/* Question Content */}
-              <div className="p-6">
-                <h2 className="text-2xl font-bold mb-2">Câu {currentIndex + 1}</h2>
-                <p className="text-muted-foreground mb-6">
-                  {isMultiSelect
-                    ? 'Chọn tất cả đáp án đúng từ các lựa chọn bên dưới.'
-                    : 'Chọn đáp án đúng nhất từ các lựa chọn bên dưới.'}
-                </p>
+            {/* ── MOBILE: Explanation tab ────────────────────────────────── */}
+            {mobileTab === 'explanation' && (
+              <div className="lg:hidden bg-card border rounded-xl p-4 mb-4">
+                <RightPanel question={currentQuestion} answer={currentAnswer} onClickImage={setLightboxSrc} />
+              </div>
+            )}
 
-                {/* Question image */}
-                {currentQuestion?.question_image && (
-                  <div className="mb-5 flex justify-center">
-                    <img
-                      src={currentQuestion.question_image}
-                      alt="Question"
-                      className="max-w-full max-h-64 rounded-lg object-contain cursor-zoom-in hover:opacity-90 transition-opacity"
-                      onClick={() => setLightboxSrc(currentQuestion.question_image!)}
-                    />
+            {/* ── Question Card (desktop always, mobile only on 'question' tab) */}
+            <div className={mobileTab !== 'question' ? 'hidden lg:block' : ''}>
+              <div className="bg-card border rounded-xl overflow-hidden">
+                {/* Question Header */}
+                <div className="px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center gap-2">
+                  <Badge variant="outline" className={`uppercase text-xs font-semibold ${diff.cls} border-0`}>
+                    {diff.label}
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {isMultiSelect ? 'Nhiều đáp án' : 'Một đáp án'}
+                  </Badge>
+                </div>
+
+                {/* Question Content */}
+                <div className="p-4 sm:p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <h2 className="text-lg sm:text-2xl font-bold">Câu {currentIndex + 1}</h2>
                   </div>
-                )}
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-4">
+                    {isMultiSelect
+                      ? 'Chọn tất cả đáp án đúng từ các lựa chọn bên dưới.'
+                      : 'Chọn đáp án đúng nhất từ các lựa chọn bên dưới.'}
+                  </p>
 
-                {/* Question Text */}
-                {currentQuestion && (
-                  <div className="bg-muted/50 rounded-xl p-6 mb-6">
-                    <HtmlContent
-                      html={currentQuestion.question_text}
-                      className="text-lg prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:cursor-zoom-in [&_img]:hover:opacity-80 [&_img]:transition-opacity"
-                      onClickImage={setLightboxSrc}
-                    />
-                  </div>
-                )}
+                  {/* Question image */}
+                  {currentQuestion?.question_image && (
+                    <div className="mb-4 flex justify-center">
+                      <img
+                        src={currentQuestion.question_image}
+                        alt="Question"
+                        className="max-w-full max-h-52 sm:max-h-64 rounded-lg object-contain cursor-zoom-in hover:opacity-90 transition-opacity"
+                        onClick={() => setLightboxSrc(currentQuestion.question_image!)}
+                      />
+                    </div>
+                  )}
 
-                {/* Answer Options */}
-                {currentQuestion && (
-                  <div className="space-y-3">
-                    {choices.map((choice, index) => (
-                      <ChoiceItem
-                        key={choice.id}
-                        id={choice.id}
-                        text={choice.text}
-                        label={CHOICE_LABELS[index]}
-                        isSelected={selectedAnswers.includes(choice.id.toUpperCase())}
-                        isCorrect={currentAnswer?.isCorrect ?? null}
-                        showResult={currentAnswer?.isChecked || false}
-                        correctAnswer={currentQuestion.correct_answer}
-                        disabled={currentAnswer?.isChecked || false}
-                        isMultiSelect={isMultiSelect}
-                        onSelect={handleSelectAnswer}
+                  {/* Question Text */}
+                  {currentQuestion && (
+                    <div className="bg-muted/50 rounded-xl px-4 py-4 sm:p-6 mb-5">
+                      <HtmlContent
+                        html={currentQuestion.question_text}
+                        className="text-base sm:text-lg prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:cursor-zoom-in [&_img]:hover:opacity-80 [&_img]:transition-opacity"
                         onClickImage={setLightboxSrc}
                       />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Navigation Footer */}
-              <div className="px-6 py-4 border-t bg-muted/30 flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  onClick={handlePrev}
-                  disabled={currentIndex === 0}
-                >
-                  <ChevronLeft className="w-4 h-4 mr-2" />
-                  Câu trước
-                </Button>
-
-                <div className="flex gap-2">
-                  {!currentAnswer?.isChecked ? (
-                    <Button
-                      onClick={handleCheck}
-                      disabled={!currentAnswer?.selected || isChecking}
-                      className="px-8 gap-2"
-                    >
-                      <Check className="h-4 w-4" /> Kiểm tra
-                    </Button>
-                  ) : isLastQuestion ? (
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={handleRestart} className="gap-2">
-                        <RotateCcw className="h-4 w-4" /> Làm lại
-                      </Button>
-                      <Button onClick={() => setIsFinished(true)}>Xem kết quả</Button>
                     </div>
-                  ) : (
-                    <Button onClick={handleNext} className="px-8 gap-2">
-                      Câu tiếp <ArrowRight className="h-4 w-4" />
-                    </Button>
+                  )}
+
+                  {/* Answer Options */}
+                  {currentQuestion && (
+                    <div className="space-y-2.5">
+                      {choices.map((choice, index) => (
+                        <ChoiceItem
+                          key={choice.id}
+                          id={choice.id}
+                          text={choice.text}
+                          label={CHOICE_LABELS[index]}
+                          isSelected={selectedAnswers.includes(choice.id.toUpperCase())}
+                          isCorrect={currentAnswer?.isCorrect ?? null}
+                          showResult={currentAnswer?.isChecked || false}
+                          correctAnswer={currentQuestion.correct_answer}
+                          disabled={currentAnswer?.isChecked || false}
+                          isMultiSelect={isMultiSelect}
+                          onSelect={handleSelectAnswer}
+                          onClickImage={setLightboxSrc}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
 
-                <Button
-                  variant="outline"
-                  onClick={handleNext}
-                  disabled={isLastQuestion}
-                >
-                  Câu sau
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
+                {/* Desktop Navigation Footer */}
+                <div className="hidden lg:flex px-6 py-4 border-t bg-muted/30 items-center justify-between">
+                  <Button variant="outline" onClick={handlePrev} disabled={currentIndex === 0}>
+                    <ChevronLeft className="w-4 h-4 mr-2" /> Câu trước
+                  </Button>
+                  <div className="flex gap-2">
+                    {!currentAnswer?.isChecked ? (
+                      <Button onClick={handleCheck} disabled={!currentAnswer?.selected || isChecking} className="px-8 gap-2">
+                        <Check className="h-4 w-4" /> Kiểm tra
+                      </Button>
+                    ) : isLastQuestion ? (
+                      <div className="flex gap-2">
+                        <Button variant="outline" onClick={handleRestart} className="gap-2">
+                          <RotateCcw className="h-4 w-4" /> Làm lại
+                        </Button>
+                        <Button onClick={() => setIsFinished(true)}>Xem kết quả</Button>
+                      </div>
+                    ) : (
+                      <Button onClick={handleNext} className="px-8 gap-2">
+                        Câu tiếp <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <Button variant="outline" onClick={handleNext} disabled={isLastQuestion}>
+                    Câu sau <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
               </div>
             </div>
           </main>
 
-          {/* ── RIGHT SIDEBAR: Progress & Answer/Explanation ─────────────────── */}
+          {/* ── RIGHT SIDEBAR (desktop only) ────────────────────────────── */}
           <aside className="hidden lg:block">
             <div className="space-y-4 sticky top-24">
-              {/* Progress Card */}
               <div className="bg-card border rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide">Tiến độ</p>
@@ -718,8 +794,6 @@ export default function PracticeRunner() {
                   {answeredCount} / {questions.length} câu đã trả lời
                 </p>
               </div>
-
-              {/* Stats Card */}
               <div className="bg-card border rounded-xl p-4">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">Kết quả</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -733,34 +807,27 @@ export default function PracticeRunner() {
                   </div>
                 </div>
               </div>
-
-              {/* Giám sát thi label (matching screenshot) */}
               <div className="bg-card border rounded-xl p-4">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">
                   Đáp án & Giải thích
                 </p>
                 <RightPanel question={currentQuestion} answer={currentAnswer} onClickImage={setLightboxSrc} />
               </div>
-
-              {/* Info Card */}
               <div className="bg-muted/50 border rounded-xl p-4">
                 <div className="flex items-start gap-2">
-                  <Info className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <Info className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                   <p className="text-xs text-muted-foreground">
-                    Bạn có thể quay lại bất kỳ câu hỏi nào bằng cách sử dụng bảng điều hướng bên trái. Đáp án được tự động lưu.
+                    Bạn có thể quay lại bất kỳ câu hỏi nào bằng bảng điều hướng bên trái.
                   </p>
                 </div>
               </div>
-
-              {/* Finish Button */}
               <Button
                 onClick={() => setIsFinished(true)}
                 className="w-full h-12 text-base"
                 size="lg"
                 disabled={answeredCount === 0}
               >
-                <Trophy className="w-5 h-5 mr-2" />
-                Xem kết quả
+                <Trophy className="w-5 h-5 mr-2" /> Xem kết quả
               </Button>
             </div>
           </aside>
@@ -768,33 +835,78 @@ export default function PracticeRunner() {
         </div>
       </div>
 
-      {/* ══ MOBILE BOTTOM BAR ════════════════════════════════════════════════ */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t p-4 z-40">
-        <div className="flex items-center gap-3">
-          {/* Stats */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted">
-            <span className="text-sm font-semibold text-green-600">{stats.correct}✓</span>
-            <span className="text-sm font-semibold text-red-600">{stats.wrong}✗</span>
+      {/* ══ MOBILE FIXED BOTTOM ACTION BAR ══════════════════════════════════ */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur border-t safe-area-bottom">
+        {/* Result banner after check */}
+        {currentAnswer?.isChecked && (
+          <div className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b ${
+            currentAnswer.isCorrect
+              ? 'bg-green-500/10 text-green-700 dark:text-green-400'
+              : 'bg-red-500/10 text-red-700 dark:text-red-400'
+          }`}>
+            {currentAnswer.isCorrect
+              ? <><CheckCircle2 className="h-4 w-4 shrink-0" /> Chính xác! · Đáp án: <strong>{currentQuestion?.correct_answer}</strong></>
+              : <><XCircle className="h-4 w-4 shrink-0" /> Chưa đúng · Đáp án: <strong>{currentQuestion?.correct_answer}</strong></>
+            }
           </div>
+        )}
 
-          {/* Progress */}
+        {/* Action row */}
+        <div className="flex items-center gap-2 px-3 py-3">
+          {/* Prev */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrev}
+            disabled={currentIndex === 0}
+            className="h-10 w-10 p-0 shrink-0"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+
+          {/* Main action */}
           <div className="flex-1">
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-muted-foreground">{answeredCount}/{questions.length}</span>
-              <span className="font-medium">{Math.round(progress)}%</span>
-            </div>
-            <Progress value={progress} className="h-1.5" />
+            {!currentAnswer?.isChecked ? (
+              <Button
+                onClick={handleCheck}
+                disabled={!currentAnswer?.selected || isChecking}
+                className="w-full h-10 gap-2 text-sm"
+              >
+                {isChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Kiểm tra
+              </Button>
+            ) : isLastQuestion ? (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleRestart} className="flex-1 h-10 gap-1.5">
+                  <RotateCcw className="h-3.5 w-3.5" /> Làm lại
+                </Button>
+                <Button size="sm" onClick={() => setIsFinished(true)} className="flex-1 h-10 gap-1.5">
+                  <Trophy className="h-3.5 w-3.5" /> Kết quả
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={() => { handleNext(); }}
+                className="w-full h-10 gap-2 text-sm"
+              >
+                Câu tiếp <ArrowRight className="h-4 w-4" />
+              </Button>
+            )}
           </div>
 
-          {/* Finish */}
-          <Button onClick={() => setIsFinished(true)} disabled={answeredCount === 0} size="sm">
-            Kết quả
+          {/* Next */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNext}
+            disabled={isLastQuestion}
+            className="h-10 w-10 p-0 shrink-0"
+          >
+            <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      {/* Bottom padding for mobile */}
-      <div className="lg:hidden h-20" />
     </div>
   );
 }
