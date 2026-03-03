@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { HtmlContent } from '@/components/ui/HtmlContent';
+import { ImageLightbox, useClickableImages } from '@/components/ui/ImageLightbox';
 import { AIExplainButton } from '../components/AIExplainButton';
 import {
   Trophy,
@@ -131,6 +132,9 @@ export default function ExamResult() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const [showReview, setShowReview] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const reviewRef = useRef<HTMLDivElement>(null);
+  useClickableImages(reviewRef, setLightboxSrc);
 
   const { data: session, isLoading: sessionLoading } = useQuery({
     queryKey: ['exam-session', sessionId],
@@ -219,6 +223,7 @@ export default function ExamResult() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         {/* Back */}
         <Button
@@ -333,7 +338,7 @@ export default function ExamResult() {
             </Button>
 
             {showReview && (
-              <div className="space-y-3">
+              <div ref={reviewRef} className="space-y-3">
                 {questions.map((q, i) => (
                   <ReviewRow
                     key={q.id}
