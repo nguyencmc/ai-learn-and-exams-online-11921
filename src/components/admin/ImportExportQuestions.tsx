@@ -142,7 +142,7 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
 
     const result: Question[] = [];
 
-    console.log(`[parseTXT] Total raw blocks: ${rawBlocks.length}`);
+    for (const block of rawBlocks) {
       const lines = block.split('\n').map(l => l.trim()).filter(l => l);
       if (lines.length < 3) continue;
 
@@ -233,15 +233,6 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
       }
 
       if (!correctAnswer) correctAnswer = 'A';
-
-      // Debug: log every block that gets dropped so we can diagnose missing questions
-      if (!(questionText && 'A' in opts && 'B' in opts)) {
-        console.warn('[parseTXT] DROPPED block —',
-          'first line:', lines[0]?.slice(0, 60),
-          '| questionText:', questionText ? `"${questionText.slice(0, 40)}..."` : '(empty)',
-          '| opts keys:', Object.keys(opts),
-        );
-      }
 
       if (questionText && 'A' in opts && 'B' in opts) {
         result.push({
