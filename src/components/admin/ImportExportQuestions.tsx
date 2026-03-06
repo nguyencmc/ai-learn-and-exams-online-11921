@@ -140,76 +140,87 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
     return [...new Set(letters)].sort().join(',');
   };
 
-  // Parse CSV content
+  // Parse CSV content — header-based column mapping, supports any number of Option columns
   const parseCSV = (content: string): Question[] => {
     const rows = parseCSVRaw(content);
     if (rows.length === 0) return [];
 
     const result: Question[] = [];
 
-    // Detect layout by inspecting the header row
-    const headerRow = rows[0].map(h => h.toLowerCase().replace(/[^a-z]/g, ''));
+    // Normalise a header cell to a plain lowercase key: "OptionA" → "optiona", "Option A" → "optiona"
+    const normHeader = (h: string) => h.toLowerCase().replace(/[\s_\-]/g, '');
 
-    // Template layout: Title,Topic,Question,OptionA,OptionB,OptionC,OptionD,CorrectAnswer,Explanation (9 cols)
-    const isTemplateLayout =
-      headerRow[0] === 'title' ||
-      (headerRow[2] === 'question' && (headerRow[3] === 'optiona' || headerRow[3] === 'option_a'));
+    const rawHeader = rows[0];
+    const header = rawHeader.map(normHeader);
 
-    const startIndex = (headerRow.includes('question') || headerRow[0] === 'title') ? 1 : 0;
+    // Detect if this is a header row (has known column names) or pure data
+    const hasHeaderRow = header.some(h =>
+      h === 'question' || h === 'title' || h === 'optiona' || h === 'correctanswer' || h === 'correct'
+    );
+    const startIndex = hasHeaderRow ? 1 : 0;
+
+    // Build column index map from header
+    // Option columns: any header matching /^option[a-h]$/ in order → mapped to A,B,C...
+    const colQuestion   = header.indexOf('question');
+    const colCorrect    = header.findIndex(h => h === 'correctanswer' || h === 'correct' || h === 'answer');
+    const colExplanation= header.findIndex(h => h === 'explanation' || h === 'explain' || h === 'giảithích');
+
+    // Collect all Option* columns in their header order
+    const OPTION_LETTERS = ['A','B','C','D','E','F','G','H'] as const;
+    const optionCols: number[] = [];
+    for (const letter of OPTION_LETTERS) {
+      const idx = header.indexOf(`option${letter.toLowerCase()}`);
+      if (idx !== -1) optionCols.push(idx);
+    }
+
+    // Fallback for legacy headerless layout or "Question,A,B,C,D,Correct,Explanation"
+    const isTemplateLike = colQuestion !== -1 && colCorrect !== -1 && optionCols.length >= 2;
 
     for (let i = startIndex; i < rows.length; i++) {
       const f = rows[i];
-      // Skip empty rows
       if (f.every(cell => cell === '')) continue;
 
       let questionText: string;
-      let optA: string, optB: string, optC: string, optD: string;
+      const opts: string[] = [];   // up to 8 options in order
       let correctRaw: string;
       let explanation: string;
 
-      if (isTemplateLayout) {
-        // f[0]=Title, f[1]=Topic, f[2]=Question, f[3]=OptionA, f[4]=OptionB, f[5]=OptionC, f[6]=OptionD, f[7]=CorrectAnswer, f[8]=Explanation
-        if (f.length < 8) continue;
-        questionText = f[2] || '';
-        optA = stripOptionPrefix(f[3] || '');
-        optB = stripOptionPrefix(f[4] || '');
-        optC = stripOptionPrefix(f[5] || '');
-        optD = stripOptionPrefix(f[6] || '');
-        correctRaw = f[7] || 'A';
-        explanation = f[8] || '';
-      } else {
-        // Legacy layout: Question,OptionA,OptionB,OptionC,OptionD,[E,F,G,H,]CorrectAnswer,Explanation
-        if (f.length < 6) continue;
-        questionText = f[0] || '';
-        optA = f[1] || '';
-        optB = f[2] || '';
-        optC = f[3] || '';
-        optD = f[4] || '';
-        // Legacy had optional E-H before correct answer
-        // If 11+ cols: f[1..8]=opts, f[9]=correct, f[10]=explanation
-        // If 6 cols: f[1..4]=opts, f[5]=correct, (no expl)
-        const hasExtendedOpts = f.length >= 11;
-        if (hasExtendedOpts) {
-          correctRaw = f[9] || 'A';
-          explanation = f[10] || '';
-        } else {
-          correctRaw = f[5] || 'A';
-          explanation = f[6] || '';
+      if (isTemplateLike) {
+        // Header-driven: read each column by its mapped index
+        questionText = f[colQuestion] || '';
+        for (const idx of optionCols) {
+          opts.push(stripOptionPrefix(f[idx] || ''));
         }
+        correctRaw  = colCorrect     !== -1 ? (f[colCorrect]     || 'A') : 'A';
+        explanation = colExplanation !== -1 ? (f[colExplanation] || '')  : '';
+      } else {
+        // Legacy headerless: col 0 = question, 1..n-2 = options, n-1 = correct, n = explanation
+        if (!hasHeaderRow && f.length < 3) continue;
+        questionText = f[0] || '';
+        // Assume last 1-2 cols are correct[+explanation], everything in between are options
+        const hasExpl = f.length >= 7; // heuristic
+        const correctIdx = hasExpl ? f.length - 2 : f.length - 1;
+        const explIdx    = hasExpl ? f.length - 1 : -1;
+        for (let k = 1; k < correctIdx; k++) opts.push(f[k] || '');
+        correctRaw  = f[correctIdx] || 'A';
+        explanation = explIdx !== -1 ? (f[explIdx] || '') : '';
       }
 
-      if (!questionText && !optA) continue;
+      if (!questionText && opts.length === 0) continue;
+
+      // Map opts array → option_a … option_h
+      const [oa='', ob='', oc='', od='', oe='', of_='', og='', oh=''] = opts;
 
       result.push({
         question_text: questionText,
-        option_a: optA,
-        option_b: optB,
-        option_c: optC,
-        option_d: optD,
-        option_e: '',
-        option_f: '',
-        option_g: '',
-        option_h: '',
+        option_a: oa,
+        option_b: ob,
+        option_c: oc,
+        option_d: od,
+        option_e: oe,
+        option_f: of_,
+        option_g: og,
+        option_h: oh,
         correct_answer: normaliseAnswer(correctRaw),
         explanation,
         question_order: result.length + 1,
@@ -432,24 +443,22 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
     }
   };
 
-  // Download blank CSV template
+  // Download blank CSV template matching the actual 11-col format
   const downloadTemplate = () => {
-    const header = 'Title,Topic,Question,OptionA,OptionB,OptionC,OptionD,CorrectAnswer,Explanation';
-    const ex1 = '"My Quiz","General","What is the capital of Vietnam?","Hanoi","Ho Chi Minh City","Da Nang","Hue","A","Hanoi is the capital of Vietnam"';
-    const ex2 = '"My Quiz","General","Which of the following are cloud providers? (choose 2)","AWS","Azure","Oracle","SAP","A,B","AWS and Azure are major cloud providers"';
+    const header = 'Title,Topic,Question,OptionA,OptionB,OptionC,OptionD,OptionE,OptionF,CorrectAnswer,Explanation';
+    const ex1 = '"My Quiz","General","What is the capital of Vietnam?","Hanoi","Ho Chi Minh City","Da Nang","Hue",,,"A","Hanoi is the capital of Vietnam"';
+    const ex2 = '"My Quiz","General","Which of the following are cloud providers? (choose 2)","AWS","Azure","Oracle","SAP",,,"A,B","AWS and Azure are major cloud providers"';
     downloadFile([header, ex1, ex2].join('\n'), 'quiz-template.csv', 'text/csv');
   };
 
-  // Export functions — 9-col template layout
+  // Export functions — 11-col template layout (Title,Topic,Question,OptionA..F,CorrectAnswer,Explanation)
   const exportToCSV = () => {
     const esc = (s: string) => (s || '').replace(/"/g, '""');
-    const header = 'Title,Topic,Question,OptionA,OptionB,OptionC,OptionD,CorrectAnswer,Explanation';
+    const header = 'Title,Topic,Question,OptionA,OptionB,OptionC,OptionD,OptionE,OptionF,CorrectAnswer,Explanation';
     const rows = questions.map(q =>
-      `"","","${esc(q.question_text)}","${esc(q.option_a)}","${esc(q.option_b)}","${esc(q.option_c)}","${esc(q.option_d)}","${q.correct_answer}","${esc(q.explanation)}"`
+      `"","","${esc(q.question_text)}","${esc(q.option_a)}","${esc(q.option_b)}","${esc(q.option_c)}","${esc(q.option_d)}","${esc(q.option_e)}","${esc(q.option_f)}","${q.correct_answer}","${esc(q.explanation)}"`
     );
-
-    const csv = [header, ...rows].join('\n');
-    downloadFile(csv, 'questions.csv', 'text/csv');
+    downloadFile([header, ...rows].join('\n'), 'questions.csv', 'text/csv');
   };
 
   const exportToTXT = () => {
