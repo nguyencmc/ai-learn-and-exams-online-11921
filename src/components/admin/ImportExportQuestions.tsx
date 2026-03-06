@@ -55,54 +55,159 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
   const [showManualDialog, setShowManualDialog] = useState(false);
   const [manualInput, setManualInput] = useState('');
 
-  // Parse CSV content
-  const parseCSV = (content: string): Question[] => {
-    const lines = content.trim().split('\n');
-    const result: Question[] = [];
-    
-    // Skip header if exists
-    const startIndex = lines[0]?.toLowerCase().includes('question') ? 1 : 0;
-    
-    for (let i = startIndex; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      
-      // Handle quoted CSV fields
-      const fields: string[] = [];
-      let current = '';
-      let inQuotes = false;
-      
-      for (let j = 0; j < line.length; j++) {
-        const char = line[j];
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          fields.push(current.trim());
-          current = '';
+  // ── Parse toàn bộ CSV text thành mảng rows (mỗi row là mảng field strings).
+  // Xử lý đúng: quoted fields có newline bên trong, escaped double-quotes ("").
+  const parseCSVRaw = (content: string): string[][] => {
+    const rows: string[][] = [];
+    let row: string[] = [];
+    let field = '';
+    let inQuotes = false;
+    let i = 0;
+
+    while (i < content.length) {
+      const ch = content[i];
+      const next = content[i + 1];
+
+      if (inQuotes) {
+        if (ch === '"' && next === '"') {
+          // escaped quote
+          field += '"';
+          i += 2;
+        } else if (ch === '"') {
+          inQuotes = false;
+          i++;
         } else {
-          current += char;
+          field += ch;
+          i++;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+          i++;
+        } else if (ch === ',') {
+          row.push(field.trim());
+          field = '';
+          i++;
+        } else if (ch === '\r' && next === '\n') {
+          row.push(field.trim());
+          field = '';
+          rows.push(row);
+          row = [];
+          i += 2;
+        } else if (ch === '\n' || ch === '\r') {
+          row.push(field.trim());
+          field = '';
+          rows.push(row);
+          row = [];
+          i++;
+        } else {
+          field += ch;
+          i++;
         }
       }
-      fields.push(current.trim());
-      
-      if (fields.length >= 6) {
-        result.push({
-          question_text: fields[0] || '',
-          option_a: fields[1] || '',
-          option_b: fields[2] || '',
-          option_c: fields[3] || '',
-          option_d: fields[4] || '',
-          option_e: fields[5] || '',
-          option_f: fields[6] || '',
-          option_g: fields[7] || '',
-          option_h: fields[8] || '',
-          correct_answer: (fields[9] || fields[5] || 'A').toUpperCase(),
-          explanation: fields[10] || fields[6] || '',
-          question_order: result.length + 1,
-        });
-      }
     }
-    
+    // flush last field / row
+    if (field || row.length > 0) {
+      row.push(field.trim());
+      if (row.some(f => f)) rows.push(row);
+    }
+    return rows;
+  };
+
+  // Strip leading "A. " / "B. " / "1. " prefix that some tools add to option cells
+  const stripOptionPrefix = (text: string): string =>
+    text.replace(/^[A-Ha-h\d][.)]\s+/, '').trim();
+
+  // Normalise correct_answer: "C;D" / "C,D" / "C D" → take first letter, uppercase
+  const normaliseAnswer = (raw: string): string => {
+    const first = raw.trim().split(/[;,\s|/]+/)[0].trim().toUpperCase();
+    return /^[A-H]$/.test(first) ? first : 'A';
+  };
+
+  // Parse CSV content
+  // Supports two column layouts automatically:
+  //   Template layout (9 cols):  Title, Topic, Question, OptionA, OptionB, OptionC, OptionD, CorrectAnswer, Explanation
+  //   Legacy layout  (≥6 cols):  Question, OptionA, OptionB, OptionC, OptionD, [OptionE..H,] CorrectAnswer, Explanation
+  const parseCSV = (content: string): Question[] => {
+    const rows = parseCSVRaw(content);
+    if (rows.length < 2) return [];
+
+    const result: Question[] = [];
+
+    // Detect header row and column layout
+    const headerRow = rows[0].map(h => h.toLowerCase().replace(/\s/g, ''));
+    const isTemplateLayout =
+      headerRow[0] === 'title' ||
+      headerRow[1] === 'topic' ||
+      (headerRow[2] === 'question' && headerRow[0] !== 'question');
+
+    for (let i = 1; i < rows.length; i++) {
+      const f = rows[i];
+      if (f.every(cell => !cell)) continue; // blank row
+
+      let questionText: string;
+      let optA: string, optB: string, optC: string, optD: string;
+      let optE = '', optF = '', optG = '', optH = '';
+      let correct: string;
+      let explanation: string;
+
+      if (isTemplateLayout) {
+        // Title(0), Topic(1), Question(2), OptionA(3), OptionB(4), OptionC(5), OptionD(6), CorrectAnswer(7), Explanation(8)
+        if (f.length < 8) continue;
+        questionText = f[2] || '';
+        optA = stripOptionPrefix(f[3] || '');
+        optB = stripOptionPrefix(f[4] || '');
+        optC = stripOptionPrefix(f[5] || '');
+        optD = stripOptionPrefix(f[6] || '');
+        correct = normaliseAnswer(f[7] || 'A');
+        explanation = f[8] || '';
+      } else {
+        // Legacy: Question(0), OptA(1), OptB(2), OptC(3), OptD(4), [OptE(5)..OptH(8),] Correct, Explanation
+        if (f.length < 6) continue;
+        questionText = f[0] || '';
+        optA = stripOptionPrefix(f[1] || '');
+        optB = stripOptionPrefix(f[2] || '');
+        optC = stripOptionPrefix(f[3] || '');
+        optD = stripOptionPrefix(f[4] || '');
+        if (f.length >= 12) {
+          // 12-col: Q, A-H (8), Correct, Explanation
+          optE = stripOptionPrefix(f[5] || '');
+          optF = stripOptionPrefix(f[6] || '');
+          optG = stripOptionPrefix(f[7] || '');
+          optH = stripOptionPrefix(f[8] || '');
+          correct = normaliseAnswer(f[9] || 'A');
+          explanation = f[10] || '';
+        } else if (f.length >= 7) {
+          // 7-col: Q, A-D, Correct, Explanation  OR  Q, A-E, Correct
+          const possibleCorrect = f[f.length - 2] || '';
+          correct = /^[A-Ha-h]/.test(possibleCorrect.trim())
+            ? normaliseAnswer(possibleCorrect)
+            : normaliseAnswer(f[5] || 'A');
+          explanation = f[f.length - 1] || '';
+        } else {
+          correct = normaliseAnswer(f[5] || 'A');
+          explanation = f[6] || '';
+        }
+      }
+
+      if (!questionText || !optA || !optB) continue;
+
+      result.push({
+        question_text: questionText,
+        option_a: optA,
+        option_b: optB,
+        option_c: optC,
+        option_d: optD,
+        option_e: optE,
+        option_f: optF,
+        option_g: optG,
+        option_h: optH,
+        correct_answer: correct,
+        explanation,
+        question_order: result.length + 1,
+      });
+    }
+
     return result;
   };
 
@@ -380,13 +485,41 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
 
   // Export functions
   const exportToCSV = () => {
-    const header = 'Question,Option A,Option B,Option C,Option D,Option E,Option F,Option G,Option H,Correct Answer,Explanation';
-    const rows = questions.map(q => 
-      `"${q.question_text.replace(/"/g, '""')}","${q.option_a.replace(/"/g, '""')}","${q.option_b.replace(/"/g, '""')}","${q.option_c.replace(/"/g, '""')}","${q.option_d.replace(/"/g, '""')}","${(q.option_e || '').replace(/"/g, '""')}","${(q.option_f || '').replace(/"/g, '""')}","${(q.option_g || '').replace(/"/g, '""')}","${(q.option_h || '').replace(/"/g, '""')}","${q.correct_answer}","${q.explanation.replace(/"/g, '""')}"`
-    );
-    
+    // Use same 9-column template layout for easy re-import
+    const header = 'Title,Topic,Question,OptionA,OptionB,OptionC,OptionD,CorrectAnswer,Explanation';
+    const rows = questions.map(q => {
+      const esc = (s: string) => `"${(s || '').replace(/"/g, '""')}"`;
+      return [
+        esc(''),
+        esc(''),
+        esc(q.question_text),
+        esc(q.option_a),
+        esc(q.option_b),
+        esc(q.option_c || ''),
+        esc(q.option_d || ''),
+        esc(q.correct_answer),
+        esc(q.explanation || ''),
+      ].join(',');
+    });
     const csv = [header, ...rows].join('\n');
     downloadFile(csv, 'questions.csv', 'text/csv');
+  };
+
+  const downloadTemplate = () => {
+    const header = 'Title,Topic,Question,OptionA,OptionB,OptionC,OptionD,CorrectAnswer,Explanation';
+    const example = [
+      '"Tên bộ đề"',
+      '"Chủ đề"',
+      '"Thủ đô của Việt Nam là gì?"',
+      '"Hà Nội"',
+      '"Hồ Chí Minh"',
+      '"Đà Nẵng"',
+      '"Huế"',
+      '"A"',
+      '"Hà Nội là thủ đô của Việt Nam từ năm 1010"',
+    ].join(',');
+    const csv = [header, example].join('\n');
+    downloadFile(csv, 'quiz-template.csv', 'text/csv');
   };
 
   const exportToTXT = () => {
@@ -470,7 +603,7 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
         {/* Export Button */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2" disabled={questions.length === 0}>
+            <Button variant="outline" className="gap-2">
               <Download className="w-4 h-4" />
               Export
             </Button>
@@ -478,17 +611,22 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
           <DropdownMenuContent>
             <DropdownMenuLabel>Chọn định dạng</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={exportToCSV}>
+            <DropdownMenuItem onClick={exportToCSV} disabled={questions.length === 0}>
               <FileSpreadsheet className="w-4 h-4 mr-2" />
               CSV (Excel)
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={exportToTXT}>
+            <DropdownMenuItem onClick={exportToTXT} disabled={questions.length === 0}>
               <FileText className="w-4 h-4 mr-2" />
               TXT (Text)
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={exportToJSON}>
+            <DropdownMenuItem onClick={exportToJSON} disabled={questions.length === 0}>
               <File className="w-4 h-4 mr-2" />
               JSON
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={downloadTemplate}>
+              <Download className="w-4 h-4 mr-2" />
+              Tải file mẫu CSV
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
