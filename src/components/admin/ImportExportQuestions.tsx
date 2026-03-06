@@ -120,10 +120,24 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
   const stripOptionPrefix = (text: string): string =>
     text.replace(/^[A-Ha-h\d][.)]\s+/, '').trim();
 
-  // Normalise correct-answer cell: "C;D" or "C,D" → take first letter only
+  // Normalise correct-answer cell: supports single "A", multi "A,C" or "A;C" or "AC"
+  // Output format matches DB convention: comma-separated sorted uppercase letters e.g. "A,C"
   const normaliseAnswer = (raw: string): string => {
-    const first = raw.trim().split(/[;,\s]/)[0].trim();
-    return /^[A-Ha-h]$/i.test(first) ? first.toUpperCase() : 'A';
+    const cleaned = raw.trim();
+    // Split by semicolons, commas, or spaces — then keep single valid letters
+    const letters = cleaned
+      .split(/[;,\s]+/)
+      .map(t => t.trim().toUpperCase())
+      .filter(t => /^[A-H]$/.test(t));
+
+    // Also handle run-together "ACD" → ['A','C','D']
+    if (letters.length === 0) {
+      const runTogether = cleaned.toUpperCase().split('').filter(c => /^[A-H]$/.test(c));
+      if (runTogether.length > 0) return [...new Set(runTogether)].sort().join(',');
+      return 'A';
+    }
+
+    return [...new Set(letters)].sort().join(',');
   };
 
   // Parse CSV content
@@ -421,8 +435,9 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
   // Download blank CSV template
   const downloadTemplate = () => {
     const header = 'Title,Topic,Question,OptionA,OptionB,OptionC,OptionD,CorrectAnswer,Explanation';
-    const example = '"My Quiz","General","What is the capital of Vietnam?","Hanoi","Ho Chi Minh City","Da Nang","Hue","A","Hanoi is the capital of Vietnam"';
-    downloadFile([header, example].join('\n'), 'quiz-template.csv', 'text/csv');
+    const ex1 = '"My Quiz","General","What is the capital of Vietnam?","Hanoi","Ho Chi Minh City","Da Nang","Hue","A","Hanoi is the capital of Vietnam"';
+    const ex2 = '"My Quiz","General","Which of the following are cloud providers? (choose 2)","AWS","Azure","Oracle","SAP","A,B","AWS and Azure are major cloud providers"';
+    downloadFile([header, ex1, ex2].join('\n'), 'quiz-template.csv', 'text/csv');
   };
 
   // Export functions — 9-col template layout
@@ -573,9 +588,9 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
               <p className="font-medium">Hướng dẫn định dạng:</p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                 <li><strong>TXT:</strong> Mỗi câu hỏi cách nhau bằng dòng trống. Câu hỏi bắt đầu bằng "Question" hoặc "Câu". Đáp án A-H trên từng dòng.</li>
-                <li><strong>CSV:</strong> Câu hỏi, Đáp án A, B, C, D, E, F, G, H, Đáp án đúng, Giải thích (phân cách bởi dấu phẩy)</li>
+                <li><strong>CSV:</strong> Dùng file mẫu 9 cột: <code>Title, Topic, Question, OptionA, OptionB, OptionC, OptionD, CorrectAnswer, Explanation</code></li>
                 <li><strong>JSON:</strong> Mảng objects với các trường question_text, option_a đến option_h, correct_answer, explanation</li>
-                <li><strong>Đáp án đúng:</strong> Đánh dấu bằng *, [x], hoặc dòng "Correct: A" / "Đáp án: A"</li>
+                <li><strong>Đáp án đúng:</strong> 1 đáp án → <code>A</code> &nbsp;|&nbsp; Nhiều đáp án → <code>A,C</code> hoặc <code>A;C</code> (phân cách bởi dấu phẩy hoặc chấm phẩy)</li>
               </ul>
             </div>
             
