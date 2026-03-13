@@ -78,7 +78,6 @@ const Exams = () => {
     setMobileSearchOpen,
     // Handlers
     handleCategoryToggle,
-    handleMobileCategorySelect: _handleMobileCategorySelect,
     handleDurationToggle,
     handleReset,
     toggleSaveExam,
@@ -364,11 +363,13 @@ const Exams = () => {
               </div>
             )}
 
-            <ExamPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
+            {paginatedExams.length > 0 && (
+              <ExamPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </div>
         </main>
       </div>
