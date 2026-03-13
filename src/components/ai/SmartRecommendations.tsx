@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { getErrorMessage } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+
+const log = logger('SmartRecommendations');
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -65,7 +69,7 @@ export const SmartRecommendations: React.FC = () => {
       // First login today - generate new recommendations
       await generateNewRecommendations();
     } catch (error) {
-      console.error('Load recommendations error:', error);
+      log.error('Load recommendations error', error);
     } finally {
       setIsLoading(false);
     }
@@ -97,15 +101,15 @@ export const SmartRecommendations: React.FC = () => {
         });
 
       if (upsertError) {
-        console.error('Cache recommendations error:', upsertError);
+        log.error('Cache recommendations error', upsertError);
       } else {
         setLastUpdated(now);
       }
     } catch (error) {
-      console.error('Smart recommendations error:', error);
+      log.error('Smart recommendations error', error);
       toast({
         title: 'Lỗi',
-        description: error instanceof Error ? error.message : 'Không thể tải gợi ý',
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     } finally {

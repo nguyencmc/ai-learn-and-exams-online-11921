@@ -3,6 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { logger } from '@/lib/logger';
+
+const log = logger('AchievementsSection');
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Link } from 'react-router-dom';
@@ -82,7 +85,7 @@ export function AchievementsSection() {
       if (error) throw error;
       setLeaderboard(data || []);
     } catch (error) {
-      console.error('Error fetching leaderboard:', error);
+      log.error('Error fetching leaderboard', error);
     } finally {
       setLeaderboardLoading(false);
     }

@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getErrorMessage } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+
+const log = logger('LessonNotes');
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -80,7 +84,7 @@ export const LessonNotes = ({ lessonId, lessonTitle, courseId }: LessonNotesProp
         setContent('');
       }
     } catch (error) {
-      console.error('Error fetching note:', error);
+      log.error('Error fetching note', error);
     } finally {
       setLoading(false);
     }
@@ -120,7 +124,7 @@ export const LessonNotes = ({ lessonId, lessonTitle, courseId }: LessonNotesProp
         setAllNotes([]);
       }
     } catch (error) {
-      console.error('Error fetching all notes:', error);
+      log.error('Error fetching all notes', error);
     }
   };
 
@@ -161,9 +165,9 @@ export const LessonNotes = ({ lessonId, lessonTitle, courseId }: LessonNotesProp
         setSavedNote(data);
         toast.success('Đã lưu ghi chú');
       }
-    } catch (error: any) {
-      console.error('Error saving note:', error);
-      toast.error(error.message || 'Không thể lưu ghi chú');
+    } catch (error: unknown) {
+      log.error('Error saving note', error);
+      toast.error(getErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -184,9 +188,9 @@ export const LessonNotes = ({ lessonId, lessonTitle, courseId }: LessonNotesProp
       setSavedNote(null);
       setContent('');
       toast.success('Đã xóa ghi chú');
-    } catch (error: any) {
-      console.error('Error deleting note:', error);
-      toast.error(error.message || 'Không thể xóa ghi chú');
+    } catch (error: unknown) {
+      log.error('Error deleting note', error);
+      toast.error(getErrorMessage(error));
     } finally {
       setDeleting(false);
     }

@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
+
+const log = logger('CourseQA');
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -111,7 +114,7 @@ export const CourseQA = ({ courseId, lessonId, instructorId }: CourseQAProps) =>
 
       setQuestions(questionsWithProfiles);
     } catch (error) {
-      console.error('Error fetching questions:', error);
+      log.error('Error fetching questions', error);
       toast.error('Không thể tải câu hỏi');
     } finally {
       setLoading(false);
@@ -150,7 +153,7 @@ export const CourseQA = ({ courseId, lessonId, instructorId }: CourseQAProps) =>
 
       setAnswers(prev => ({ ...prev, [questionId]: answersWithProfiles }));
     } catch (error) {
-      console.error('Error fetching answers:', error);
+      log.error('Error fetching answers', error);
     } finally {
       setLoadingAnswers(prev => ({ ...prev, [questionId]: false }));
     }
@@ -181,7 +184,7 @@ export const CourseQA = ({ courseId, lessonId, instructorId }: CourseQAProps) =>
       setShowAskForm(false);
       fetchQuestions();
     } catch (error) {
-      console.error('Error submitting question:', error);
+      log.error('Error submitting question', error);
       toast.error('Không thể đăng câu hỏi');
     } finally {
       setSubmitting(false);
@@ -224,7 +227,7 @@ export const CourseQA = ({ courseId, lessonId, instructorId }: CourseQAProps) =>
       fetchAnswers(questionId);
       fetchQuestions();
     } catch (error) {
-      console.error('Error submitting answer:', error);
+      log.error('Error submitting answer', error);
       toast.error('Không thể đăng câu trả lời');
     } finally {
       setSubmittingAnswer(prev => ({ ...prev, [questionId]: false }));
@@ -268,7 +271,7 @@ export const CourseQA = ({ courseId, lessonId, instructorId }: CourseQAProps) =>
       fetchAnswers(questionId);
       fetchQuestions();
     } catch (error) {
-      console.error('Error accepting answer:', error);
+      log.error('Error accepting answer', error);
       toast.error('Không thể chấp nhận câu trả lời');
     }
   };

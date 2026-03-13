@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getErrorMessage } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+
+const log = logger('CourseCertificate');
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Award, Download, Share2, CheckCircle, Loader2 } from "lucide-react";
@@ -59,7 +63,7 @@ export const CourseCertificate = ({
       if (error) throw error;
       setCertificate(data);
     } catch (error) {
-      console.error("Error fetching certificate:", error);
+      log.error("Error fetching certificate", error);
     } finally {
       setLoading(false);
     }
@@ -106,9 +110,9 @@ export const CourseCertificate = ({
       setCertificate(data);
       toast.success("Chúc mừng! Bạn đã nhận được chứng chỉ hoàn thành khóa học!");
       onCertificateIssued?.();
-    } catch (error: any) {
-      console.error("Error issuing certificate:", error);
-      toast.error("Không thể cấp chứng chỉ: " + error.message);
+    } catch (error: unknown) {
+      log.error("Error issuing certificate", error);
+      toast.error("Không thể cấp chứng chỉ: " + getErrorMessage(error));
     } finally {
       setIssuing(false);
     }
@@ -133,7 +137,7 @@ export const CourseCertificate = ({
       
       toast.success("Đã tải chứng chỉ!");
     } catch (error) {
-      console.error("Error downloading certificate:", error);
+      log.error("Error downloading certificate", error);
       toast.error("Không thể tải chứng chỉ. Vui lòng thử lại.");
     }
   };

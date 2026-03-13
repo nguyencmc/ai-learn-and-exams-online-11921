@@ -12,6 +12,9 @@ import { History, Clock, Calendar, Eye, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
+
+const log = logger('ExamHistoryModal');
 
 interface AttemptEntry {
     id: string;
@@ -63,7 +66,7 @@ export function ExamHistoryModal({
             if (error) throw error;
             setAttempts((data || []) as AttemptEntry[]);
         } catch (error) {
-            console.error('Error fetching history:', error);
+            log.error('Error fetching history', error);
         } finally {
             setLoading(false);
         }

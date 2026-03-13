@@ -1,5 +1,9 @@
 import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getErrorMessage } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+
+const log = logger('LessonEditor');
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -134,11 +138,11 @@ export const LessonEditor = ({
         title: "Thành công",
         description: "Đã tải lên video",
       });
-    } catch (error: any) {
-      console.error('Upload error:', error);
+    } catch (error: unknown) {
+      log.error('Upload error', error);
       toast({
         title: "Lỗi",
-        description: error.message || "Không thể tải lên video",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {
@@ -202,11 +206,11 @@ export const LessonEditor = ({
         title: "Thành công",
         description: `Đã tải lên ${files.length} tài liệu`,
       });
-    } catch (error: any) {
-      console.error('Upload error:', error);
+    } catch (error: unknown) {
+      log.error('Upload error', error);
       toast({
         title: "Lỗi",
-        description: error.message || "Không thể tải lên tài liệu",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {

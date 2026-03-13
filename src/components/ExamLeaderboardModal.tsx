@@ -10,6 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Trophy, Clock, Calendar, Medal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
+
+const log = logger('ExamLeaderboardModal');
 
 interface LeaderboardEntry {
     rank: number;
@@ -89,7 +92,7 @@ export function ExamLeaderboardModal({
 
             setEntries(leaderboard);
         } catch (error) {
-            console.error('Error fetching leaderboard:', error);
+            log.error('Error fetching leaderboard', error);
         } finally {
             setLoading(false);
         }

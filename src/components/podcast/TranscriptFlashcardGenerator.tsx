@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from '@/lib/logger';
+
+const log = logger('TranscriptFlashcardGenerator');
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -85,8 +88,8 @@ export const TranscriptFlashcardGenerator = ({
 
       setGeneratedCards(cards);
       setStep("review");
-    } catch (error: any) {
-      console.error("Error generating flashcards:", error);
+    } catch (error: unknown) {
+      log.error("Error generating flashcards", error);
       toast({
         title: "Lỗi",
         description: "Không thể tạo flashcard từ AI",
@@ -197,8 +200,8 @@ export const TranscriptFlashcardGenerator = ({
       setOpen(false);
       setStep("config");
       setGeneratedCards([]);
-    } catch (error: any) {
-      console.error("Error saving flashcards:", error);
+    } catch (error: unknown) {
+      log.error("Error saving flashcards", error);
       toast({
         title: "Lỗi",
         description: "Không thể lưu flashcard",

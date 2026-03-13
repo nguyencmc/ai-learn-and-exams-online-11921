@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
+
+const log = logger('CourseTestTaking');
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -163,7 +166,7 @@ export const CourseTestTaking = ({ lessonId, onComplete }: CourseTestTakingProps
         })));
       }
     } catch (error) {
-      console.error('Error fetching test:', error);
+      log.error('Error fetching test', error);
       toast.error('Không thể tải bài test');
     } finally {
       setLoading(false);
@@ -272,7 +275,7 @@ export const CourseTestTaking = ({ lessonId, onComplete }: CourseTestTakingProps
         onComplete();
       }
     } catch (error) {
-      console.error('Error submitting test:', error);
+      log.error('Error submitting test', error);
       toast.error('Không thể nộp bài');
     } finally {
       setSubmitting(false);

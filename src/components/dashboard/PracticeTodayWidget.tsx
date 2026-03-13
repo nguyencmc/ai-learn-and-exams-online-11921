@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
+
+const log = logger('PracticeTodayWidget');
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -201,7 +204,7 @@ export const PracticeTodayWidget = () => {
         if (fallbackSet && fallbackSet.length > 0) setLastPracticeSet(fallbackSet[0]);
       }
     } catch (error) {
-      console.error('Error fetching practice today data:', error);
+      log.error('Error fetching practice today data', error);
     }
     setLoading(false);
   };
@@ -287,7 +290,7 @@ export const PracticeTodayWidget = () => {
       setSmartRecs(buildRecommendations(stats));
       setSmartSummary(buildSummary(stats));
     } catch (err) {
-      console.error('Smart recommendations error:', err);
+      log.error('Smart recommendations error', err);
     } finally {
       setSmartLoading(false);
     }

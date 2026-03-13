@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getErrorMessage } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+
+const log = logger('CourseReviews');
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -89,7 +93,7 @@ export const CourseReviews = ({ courseId, isEnrolled, onRatingUpdate }: CourseRe
         onRatingUpdate(avgRating, reviewsWithProfiles.length);
       }
     } catch (error) {
-      console.error("Error fetching reviews:", error);
+      log.error("Error fetching reviews", error);
     }
     setLoading(false);
   };
@@ -131,9 +135,9 @@ export const CourseReviews = ({ courseId, isEnrolled, onRatingUpdate }: CourseRe
 
       setIsEditing(false);
       fetchReviews();
-    } catch (error: any) {
-      console.error("Error submitting review:", error);
-      toast.error("Không thể gửi đánh giá: " + error.message);
+    } catch (error: unknown) {
+      log.error("Error submitting review", error);
+      toast.error("Không thể gửi đánh giá: " + getErrorMessage(error));
     }
     setSubmitting(false);
   };
@@ -157,8 +161,8 @@ export const CourseReviews = ({ courseId, isEnrolled, onRatingUpdate }: CourseRe
       setNewComment("");
       toast.success("Đã xóa đánh giá");
       fetchReviews();
-    } catch (error: any) {
-      toast.error("Không thể xóa đánh giá: " + error.message);
+    } catch (error: unknown) {
+      toast.error("Không thể xóa đánh giá: " + getErrorMessage(error));
     }
   };
 

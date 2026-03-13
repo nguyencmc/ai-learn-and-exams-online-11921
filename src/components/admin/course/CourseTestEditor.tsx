@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getErrorMessage } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+
+const log = logger('CourseTestEditor');
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -109,7 +113,7 @@ export const CourseTestEditor = ({ lessonId, lessonTitle }: CourseTestEditorProp
         setQuestions([]);
       }
     } catch (error) {
-      console.error('Error fetching test:', error);
+      log.error('Error fetching test', error);
     } finally {
       setLoading(false);
     }
@@ -225,11 +229,11 @@ export const CourseTestEditor = ({ lessonId, lessonTitle }: CourseTestEditorProp
         title: "Thành công",
         description: "Đã lưu bài test",
       });
-    } catch (error: any) {
-      console.error('Error saving test:', error);
+    } catch (error: unknown) {
+      log.error('Error saving test', error);
       toast({
         title: "Lỗi",
-        description: error.message || "Không thể lưu bài test",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {
