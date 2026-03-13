@@ -14,6 +14,15 @@ interface UseExamProctoringOptions {
   enabled?: boolean;
   onViolation?: (event: ProctorEvent) => void;
   snapshotInterval?: number; // in milliseconds
+  maxViolations?: number; // max violations before auto-flagging
+}
+
+// Rate limiting: minimum interval between violation reports (ms)
+const MIN_VIOLATION_INTERVAL = 3000;
+
+// Generate a random suffix for snapshot file names to prevent predictable paths
+function randomSuffix(): string {
+  return Math.random().toString(36).substring(2, 10);
 }
 
 export function useExamProctoring({
@@ -22,6 +31,7 @@ export function useExamProctoring({
   enabled = true,
   onViolation,
   snapshotInterval = 60000, // 1 minute default
+  maxViolations = 50,
 }: UseExamProctoringOptions) {
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -32,6 +42,7 @@ export function useExamProctoring({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const snapshotIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const attemptIdRef = useRef<string | null>(null);
+  const lastViolationTimeRef = useRef<number>(0);
 
   // Set attempt ID for logging
   const setAttemptId = useCallback((id: string) => {
@@ -88,7 +99,9 @@ export function useExamProctoring({
 
         try {
           const timestamp = Date.now();
-          const fileName = `${userId}/${examId}/${timestamp}_${eventType}.jpg`;
+          // Use random suffix to prevent predictable snapshot paths
+          const suffix = randomSuffix();
+          const fileName = `${userId}/${examId}/${timestamp}_${suffix}_${eventType}.jpg`;
           
           const { error: uploadError } = await supabase.storage
             .from('exam-proctoring')
@@ -113,16 +126,29 @@ export function useExamProctoring({
     });
   }, [cameraEnabled, userId, examId]);
 
-  // Handle violation event
+  // Handle violation event with rate limiting
   const handleViolation = useCallback(async (event: ProctorEvent) => {
-    setViolations(prev => [...prev, event]);
+    // Rate limiting: prevent spam violations
+    const now = Date.now();
+    if (now - lastViolationTimeRef.current < MIN_VIOLATION_INTERVAL) {
+      return;
+    }
+    lastViolationTimeRef.current = now;
+
+    setViolations(prev => {
+      // Cap violations to prevent unlimited growth
+      if (prev.length >= maxViolations) {
+        return prev;
+      }
+      return [...prev, event];
+    });
     
     // Capture snapshot on violation
     const snapshotUrl = await captureSnapshot(event.type);
     await logEvent(event, snapshotUrl || undefined);
     
     onViolation?.(event);
-  }, [captureSnapshot, logEvent, onViolation]);
+  }, [captureSnapshot, logEvent, onViolation, maxViolations]);
 
   // Start camera
   const startCamera = useCallback(async () => {

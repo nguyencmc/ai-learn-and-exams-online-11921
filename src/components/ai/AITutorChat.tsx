@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bot, Send, User, X, Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -17,14 +18,36 @@ interface AITutorChatProps {
   onClose: () => void;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-tutor`;
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL || ''}/functions/v1/ai-tutor`;
+
+// Maximum input length to prevent abuse
+const MAX_INPUT_LENGTH = 2000;
+
+// Rate limiting: minimum interval between messages (ms)
+const MIN_MESSAGE_INTERVAL = 1000;
+
+/**
+ * Escapes HTML special characters to prevent XSS when rendering text.
+ */
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, (char) => map[char] || char);
+}
 
 export const AITutorChat: React.FC<AITutorChatProps> = ({ context, isOpen, onClose }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastMessageTimeRef = useRef<number>(0);
   const { toast } = useToast();
+  const { session } = useAuth();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -32,10 +55,25 @@ export const AITutorChat: React.FC<AITutorChatProps> = ({ context, isOpen, onClo
     }
   }, [messages]);
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMsg: Message = { role: 'user', content: input };
+    // Rate limiting check
+    const now = Date.now();
+    if (now - lastMessageTimeRef.current < MIN_MESSAGE_INTERVAL) {
+      toast({
+        title: 'Vui lòng chờ',
+        description: 'Bạn đang gửi tin nhắn quá nhanh.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    lastMessageTimeRef.current = now;
+
+    // Input length validation
+    const trimmedInput = input.trim().slice(0, MAX_INPUT_LENGTH);
+
+    const userMsg: Message = { role: 'user', content: trimmedInput };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
@@ -43,11 +81,14 @@ export const AITutorChat: React.FC<AITutorChatProps> = ({ context, isOpen, onClo
     let assistantContent = '';
 
     try {
+      // Use session access token if available, fall back to publishable key
+      const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+
       const response = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           messages: [...messages, userMsg],
@@ -118,7 +159,7 @@ export const AITutorChat: React.FC<AITutorChatProps> = ({ context, isOpen, onClo
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [input, isLoading, messages, context, session?.access_token, toast]);
 
   if (!isOpen) return null;
 
@@ -131,7 +172,7 @@ export const AITutorChat: React.FC<AITutorChatProps> = ({ context, isOpen, onClo
           </div>
           <CardTitle className="text-base">AI Tutor</CardTitle>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Đóng AI Tutor">
           <X className="w-4 h-4" />
         </Button>
       </CardHeader>
@@ -164,7 +205,10 @@ export const AITutorChat: React.FC<AITutorChatProps> = ({ context, isOpen, onClo
                       : 'bg-muted'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  <p
+                    className="whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: escapeHtml(msg.content) }}
+                  />
                 </div>
                 {msg.role === 'user' && (
                   <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
@@ -197,12 +241,14 @@ export const AITutorChat: React.FC<AITutorChatProps> = ({ context, isOpen, onClo
           >
             <Input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
               placeholder="Nhập câu hỏi..."
               disabled={isLoading}
               className="flex-1"
+              maxLength={MAX_INPUT_LENGTH}
+              aria-label="Nhập câu hỏi cho AI Tutor"
             />
-            <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
+            <Button type="submit" size="icon" disabled={isLoading || !input.trim()} aria-label="Gửi tin nhắn">
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </Button>
           </form>

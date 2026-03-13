@@ -9,6 +9,7 @@ import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import { MiniPlayerProvider } from "@/contexts/MiniPlayerContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { MiniPlayer } from "@/components/podcast/MiniPlayer";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load pages
 const Index = lazy(() => import("./pages/Index"));
@@ -103,7 +104,16 @@ const LoadingFallback = () => (
   </div>
 );
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 10,   // 10 minutes (garbage collection)
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -115,8 +125,9 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
-                <Suspense fallback={<LoadingFallback />}>
-                  <Routes>
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <Routes>
                     {/* Auth route - outside MainLayout */}
                     <Route path="/auth" element={<Auth />} />
 
@@ -212,8 +223,9 @@ const App = () => (
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Route>
-                  </Routes>
-                </Suspense>
+                    </Routes>
+                  </Suspense>
+                </ErrorBoundary>
                 <MiniPlayer />
               </BrowserRouter>
             </MiniPlayerProvider>
