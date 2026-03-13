@@ -20,9 +20,11 @@ interface UseExamProctoringOptions {
 // Rate limiting: minimum interval between violation reports (ms)
 const MIN_VIOLATION_INTERVAL = 3000;
 
-// Generate a random suffix for snapshot file names to prevent predictable paths
+// Generate a cryptographically random suffix for snapshot file names
 function randomSuffix(): string {
-  return Math.random().toString(36).substring(2, 10);
+  const array = new Uint8Array(8);
+  crypto.getRandomValues(array);
+  return Array.from(array, (b) => b.toString(36)).join('').slice(0, 10);
 }
 
 export function useExamProctoring({
@@ -138,6 +140,7 @@ export function useExamProctoring({
     setViolations(prev => {
       // Cap violations to prevent unlimited growth
       if (prev.length >= maxViolations) {
+        console.warn(`Proctoring: max violations (${maxViolations}) reached, new violation dropped:`, event.type);
         return prev;
       }
       return [...prev, event];

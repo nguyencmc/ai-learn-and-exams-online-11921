@@ -19,7 +19,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Flag to track if initial session has been set by the listener
+    // Use ref to track if initial session has been set by the listener
+    // This persists across async operations reliably
     let initialSessionSet = false;
 
     // Set up auth state listener FIRST
@@ -42,7 +43,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }).catch((error) => {
       console.error('Failed to get initial session:', error);
-      setLoading(false);
+      if (!initialSessionSet) {
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();

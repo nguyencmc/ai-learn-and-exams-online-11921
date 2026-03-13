@@ -26,20 +26,6 @@ const MAX_INPUT_LENGTH = 2000;
 // Rate limiting: minimum interval between messages (ms)
 const MIN_MESSAGE_INTERVAL = 1000;
 
-/**
- * Escapes HTML special characters to prevent XSS when rendering text.
- */
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-  };
-  return text.replace(/[&<>"']/g, (char) => map[char] || char);
-}
-
 export const AITutorChat: React.FC<AITutorChatProps> = ({ context, isOpen, onClose }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -205,10 +191,7 @@ export const AITutorChat: React.FC<AITutorChatProps> = ({ context, isOpen, onClo
                       : 'bg-muted'
                   }`}
                 >
-                  <p
-                    className="whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: escapeHtml(msg.content) }}
-                  />
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
                 </div>
                 {msg.role === 'user' && (
                   <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
