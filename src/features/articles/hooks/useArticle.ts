@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Article } from '../types';
+import { logger } from '@/lib/logger';
+
+const log = logger('useArticle');
 
 export function useArticle(slug: string | undefined) {
   const [article, setArticle] = useState<Article | null>(null);
@@ -38,7 +41,7 @@ export function useArticle(slug: string | undefined) {
       setArticle(data as Article);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching article:', err);
+      log.error('Error fetching article', err);
     } finally {
       setLoading(false);
     }

@@ -28,6 +28,9 @@ import { useToast } from '@/hooks/useToast';
 import { createAuditLog } from '@/hooks/useAuditLogs';
 import { CreatePracticeQuestionsStep } from '@/components/admin/practice/CreatePracticeQuestionsStep';
 import type { PracticeQuestion } from '@/components/admin/practice/PracticeQuestionEditor';
+import { logger } from '@/lib/logger';
+
+const log = logger('QuestionSetEditor');
 
 const QuestionSetEditor = () => {
   const { id } = useParams();
@@ -308,7 +311,7 @@ const QuestionSetEditor = () => {
 
       navigate('/admin/question-sets');
     } catch (error) {
-      console.error('Save error:', error);
+      log.error('Save error', error);
       toast({
         title: "Lỗi",
         description: "Không thể lưu bộ đề",

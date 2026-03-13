@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ArticleCategory } from '../types';
+import { logger } from '@/lib/logger';
+
+const log = logger('useArticleCategories');
 
 export function useArticleCategories() {
   const [categories, setCategories] = useState<ArticleCategory[]>([]);
@@ -22,7 +25,7 @@ export function useArticleCategories() {
       setCategories((data as ArticleCategory[]) || []);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching article categories:', err);
+      log.error('Error fetching article categories', err);
     } finally {
       setLoading(false);
     }

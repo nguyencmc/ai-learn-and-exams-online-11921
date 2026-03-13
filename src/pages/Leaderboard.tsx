@@ -6,6 +6,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, Medal, Crown, Star, Target, TrendingUp } from "lucide-react";
+import { logger } from '@/lib/logger';
+
+const log = logger('Leaderboard');
 
 interface LeaderboardEntry {
   user_id: string;
@@ -35,7 +38,7 @@ const Leaderboard = () => {
       if (error) throw error;
       setLeaderboard(data || []);
     } catch (error) {
-      console.error('Error fetching leaderboard:', error);
+      log.error('Error fetching leaderboard', error);
     } finally {
       setLoading(false);
     }

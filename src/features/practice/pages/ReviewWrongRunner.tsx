@@ -22,6 +22,9 @@ import { createAttempt } from '../api';
 import type { AnswerState } from '../types';
 import { isMultiSelectQuestion, toggleMultiSelect, checkAnswerCorrect } from '../types';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
+
+const log = logger('ReviewWrongRunner');
 
 export default function ReviewWrongRunner() {
   const navigate = useNavigate();
@@ -96,7 +99,7 @@ export default function ReviewWrongRunner() {
           time_spent_sec: 0,
         });
       } catch (err) {
-        console.error('Failed to save attempt:', err);
+        log.error('Failed to save attempt', err);
       }
     }
     setIsChecking(false);

@@ -52,6 +52,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
+import { logger } from '@/lib/logger';
+
+const log = logger('RichTextEditor');
 
 interface RichTextEditorProps {
   content?: string;
@@ -553,7 +556,7 @@ export const RichTextEditor = ({
       setUploadPreview(null);
       setImagePopoverOpen(false);
     } catch (error) {
-      console.error("Upload failed:", error);
+      log.error('Upload failed', error);
     } finally {
       setIsUploading(false);
       if (uploadFileInputRef.current) uploadFileInputRef.current.value = "";

@@ -11,6 +11,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Eye, Play, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { logger } from '@/lib/logger';
+
+const log = logger('ExamPreviewModal');
 
 interface Question {
     id: string;
@@ -78,7 +81,7 @@ export function ExamPreviewModal({
                 setTotalQuestions(count || 0);
             }
         } catch (error) {
-            console.error('Error fetching preview questions:', error);
+            log.error('Error fetching preview questions', error);
         } finally {
             setLoading(false);
         }

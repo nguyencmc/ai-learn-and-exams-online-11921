@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, BookOpen, Star, Eye, User } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { logger } from '@/lib/logger';
+
+const log = logger('Books');
 
 interface BookCategory {
   id: string;
@@ -74,7 +77,7 @@ const Books = () => {
         setBooks(booksData);
       }
     } catch (error) {
-      console.error("Error fetching data:", error);
+      log.error('Error fetching data', error);
     } finally {
       setLoading(false);
     }

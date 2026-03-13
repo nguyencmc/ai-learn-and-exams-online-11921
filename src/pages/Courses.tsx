@@ -36,6 +36,9 @@ import {
 import { useWishlist } from "@/hooks/useWishlist";
 import { WishlistButton } from "@/components/course/WishlistButton";
 import PageHeader from "@/components/PageHeader";
+import { logger } from '@/lib/logger';
+
+const log = logger('Courses');
 
 interface Course {
   id: string;
@@ -97,7 +100,7 @@ const Courses = () => {
     const { data, error } = await query;
 
     if (error) {
-      console.error("Error fetching courses:", error);
+      log.error('Error fetching courses', error);
     } else {
       setCourses(data || []);
     }

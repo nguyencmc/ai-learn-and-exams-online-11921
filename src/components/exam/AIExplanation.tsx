@@ -3,6 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
+
+const log = logger('AIExplanation');
 
 interface AIExplanationProps {
   question: {
@@ -56,7 +59,7 @@ export const AIExplanation = ({ question, userAnswer }: AIExplanationProps) => {
       setExplanation(data.explanation);
       setIsExpanded(true);
     } catch (error) {
-      console.error('Error getting AI explanation:', error);
+      log.error('Error getting AI explanation', error);
       toast.error('Không thể lấy giải thích từ AI. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);

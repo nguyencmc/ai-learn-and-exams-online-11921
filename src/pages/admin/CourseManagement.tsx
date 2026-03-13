@@ -55,6 +55,9 @@ import {
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/useToast';
 import { createAuditLog } from '@/hooks/useAuditLogs';
+import { logger } from '@/lib/logger';
+
+const log = logger('CourseManagement');
 
 interface Course {
   id: string;
@@ -153,7 +156,7 @@ const CourseManagement = () => {
       .eq('course_id', courseId);
 
     if (sectionsError) {
-      console.error('Error deleting sections:', sectionsError);
+      log.error('Error deleting sections', sectionsError);
     }
 
     const { error } = await supabase

@@ -12,6 +12,9 @@ import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { createAuditLog } from '@/hooks/useAuditLogs';
 import { ArrowLeft, Shield, Save, Loader2, Users, GraduationCap, UserCheck, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { logger } from '@/lib/logger';
+
+const log = logger('PermissionManagement');
 
 interface Permission {
   id: string;
@@ -90,7 +93,7 @@ const PermissionManagement = () => {
       setPermissions(permissionsRes.data || []);
       setRolePermissions(rolePermissionsRes.data || []);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      log.error('Error fetching data', error);
       toast({
         title: "Lỗi",
         description: "Không thể tải dữ liệu phân quyền",
@@ -205,7 +208,7 @@ const PermissionManagement = () => {
       setPendingChanges(new Map());
       await fetchData();
     } catch (error) {
-      console.error('Error saving:', error);
+      log.error('Error saving', error);
       toast({
         title: "Lỗi",
         description: "Không thể lưu thay đổi",

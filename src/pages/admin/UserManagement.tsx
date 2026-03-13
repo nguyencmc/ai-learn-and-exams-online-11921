@@ -57,6 +57,9 @@ import {
 import { useToast } from '@/hooks/useToast';
 import { createAuditLog } from '@/hooks/useAuditLogs';
 import { getErrorMessage } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+
+const log = logger('UserManagement');
 
 interface ImportResultItem {
   success: boolean;
@@ -163,7 +166,7 @@ const UserManagement = () => {
       
       setUsers(result.users || []);
     } catch (err) {
-      console.error('Error fetching users:', err);
+      log.error('Error fetching users', err);
       toast({
         title: "Lỗi",
         description: "Không thể tải danh sách người dùng",

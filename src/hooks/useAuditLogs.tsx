@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
+import { logger } from '@/lib/logger';
+
+const log = logger('useAuditLogs');
 
 export interface AuditLog {
   id: string;
@@ -84,7 +87,7 @@ export const useAuditLogs = (options: UseAuditLogsOptions = {}) => {
 
       setLogs(enrichedLogs);
     } catch (err) {
-      console.error('Error fetching audit logs:', err);
+      log.error('Error fetching audit logs', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch audit logs');
     } finally {
       setLoading(false);
@@ -120,7 +123,7 @@ export const createAuditLog = async (
     if (error) throw error;
     return data;
   } catch (err) {
-    console.error('Error creating audit log:', err);
+    log.error('Error creating audit log', err);
     throw err;
   }
 };

@@ -19,6 +19,9 @@ import type { AnswerState, PracticeQuestion } from '../types';
 import { isMultiSelectQuestion, toggleMultiSelect, checkAnswerCorrect } from '../types';
 import { HtmlContent } from '@/components/ui/HtmlContent';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
+import { logger } from '@/lib/logger';
+
+const log = logger('PracticeRunner');
 
 const EXPLAIN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explain-answer`;
 const CHOICE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -295,7 +298,7 @@ export default function PracticeRunner() {
           time_spent_sec: 0,
         });
       } catch (e) {
-        console.error(e);
+        log.error('Error occurred', e);
       }
     }
     setIsChecking(false);

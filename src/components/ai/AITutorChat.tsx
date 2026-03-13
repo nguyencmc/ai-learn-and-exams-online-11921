@@ -6,6 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bot, Send, User, X, Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
+
+const log = logger('AITutorChat');
 
 interface Message {
   role: 'user' | 'assistant';
@@ -136,7 +139,7 @@ export const AITutorChat: React.FC<AITutorChatProps> = ({ context, isOpen, onClo
         }
       }
     } catch (error) {
-      console.error('AI Tutor error:', error);
+      log.error('AI Tutor error', error);
       toast({
         title: 'Lỗi',
         description: error instanceof Error ? error.message : 'Không thể kết nối AI Tutor',

@@ -3,6 +3,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createExamSession, submitExamSession, createBatchAttempts } from '../api';
 import type { PracticeQuestion, ExamSession, AnswerState } from '../types';
 import { isMultiSelectQuestion, toggleMultiSelect, checkAnswerCorrect } from '../types';
+import { logger } from '@/lib/logger';
+
+const log = logger('useExamSession');
 
 interface UseExamSessionOptions {
   questions: PracticeQuestion[];
@@ -96,7 +99,7 @@ export function useExamSession({
       setSession(newSession);
       setIsStarted(true);
     } catch (error) {
-      console.error('Failed to start exam:', error);
+      log.error('Failed to start exam', error);
     }
   }, [user, setId, durationMinutes, questions.length]);
 
@@ -161,7 +164,7 @@ export function useExamSession({
       setSession(updatedSession);
       onComplete?.(updatedSession);
     } catch (error) {
-      console.error('Failed to submit exam:', error);
+      log.error('Failed to submit exam', error);
     } finally {
       setIsSubmitting(false);
     }

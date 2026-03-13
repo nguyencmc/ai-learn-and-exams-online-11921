@@ -10,6 +10,9 @@ import { toast } from 'sonner';
 import type { PracticeQuestion } from '../types';
 import { isMultiSelectQuestion } from '../types';
 import { HtmlContent } from '@/components/ui/HtmlContent';
+import { logger } from '@/lib/logger';
+
+const log = logger('QuestionCard');
 
 interface QuestionCardProps {
   question: PracticeQuestion;
@@ -92,7 +95,7 @@ export function QuestionCard({
       setFlashcardCreated(true);
       toast.success('Đã thêm vào Mistakes (Flashcards)');
     } catch (error) {
-      console.error('Failed to create flashcard:', error);
+      log.error('Failed to create flashcard', error);
       toast.error('Không thể tạo flashcard');
     } finally {
       setIsCreatingFlashcard(false);

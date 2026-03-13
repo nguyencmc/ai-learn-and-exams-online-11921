@@ -20,6 +20,9 @@ import {
 import { useToast } from '@/hooks/useToast';
 import { supabase } from '@/integrations/supabase/client';
 import { Save, Send, X, Plus, FileText, Image } from 'lucide-react';
+import { logger } from '@/lib/logger';
+
+const log = logger('ArticleEditorPage');
 
 const ArticleEditorPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -189,7 +192,7 @@ const ArticleEditorPage = () => {
 
       navigate('/articles/my');
     } catch (err) {
-      console.error('Error saving article:', err);
+      log.error('Error saving article', err);
       toast({
         title: 'Lỗi',
         description: 'Không thể lưu bài viết',

@@ -11,6 +11,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FlashcardFlip } from '../components/FlashcardFlip';
 import { GradeButtons } from '../components/GradeButtons';
 import { ArrowLeft, CheckCircle, RotateCcw, Layers } from 'lucide-react';
+import { logger } from '@/lib/logger';
+
+const log = logger('StudyDeckPage');
 
 export default function StudyDeckPage() {
   const { deckId } = useParams<{ deckId: string }>();
@@ -37,7 +40,7 @@ export default function StudyDeckPage() {
           setDeckTitle(studyCards[0].deck.title);
         }
       } catch (error) {
-        console.error('Error loading cards:', error);
+        log.error('Error loading cards', error);
       } finally {
         setIsLoading(false);
       }

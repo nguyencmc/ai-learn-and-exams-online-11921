@@ -24,6 +24,9 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Article } from '../types';
 import { HtmlContent } from '@/components/ui/HtmlContent';
+import { logger } from '@/lib/logger';
+
+const log = logger('ArticlePreviewPage');
 
 const statusConfig = {
     draft: { label: 'Bản nháp', icon: AlertCircle, color: 'bg-gray-500' },
@@ -61,7 +64,7 @@ const ArticlePreviewPage = () => {
                 if (fetchError) throw fetchError;
                 setArticle(data as Article);
             } catch (err) {
-                console.error('Error fetching article:', err);
+                log.error('Error fetching article', err);
                 setError('Không thể tải bài viết');
             } finally {
                 setLoading(false);

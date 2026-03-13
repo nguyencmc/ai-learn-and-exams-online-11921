@@ -15,6 +15,9 @@ import {
   PlayCircle,
   ArrowLeft
 } from 'lucide-react';
+import { logger } from '@/lib/logger';
+
+const log = logger('InstructorProfile');
 
 interface Instructor {
   user_id: string;
@@ -79,7 +82,7 @@ const InstructorProfile = () => {
         const total = (coursesData || []).reduce((acc, course) => acc + (course.student_count || 0), 0);
         setTotalStudents(total);
       } catch (error) {
-        console.error('Error fetching instructor data:', error);
+        log.error('Error fetching instructor data', error);
       } finally {
         setLoading(false);
       }
