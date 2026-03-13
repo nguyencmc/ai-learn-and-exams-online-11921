@@ -39,39 +39,12 @@ import {
   Grid3X3,
   List,
   RotateCcw,
-  Sigma,
-  Code,
-  Languages,
-  Stethoscope,
-  Atom,
-  Calculator,
-  Globe,
-  Scale,
-  Palette,
-  Music,
 } from "lucide-react";
 
 import { useExams } from "@/hooks/useExams";
 import { ExamFilters, ExamPagination } from "@/components/exam";
 import { ExamCard } from "@/components/ExamCard";
 import { cn } from "@/lib/utils";
-
-// Category icon mapping
-const getCategoryStyle = (_categoryName: string, index: number) => {
-  const styles = [
-    { icon: Sigma, bgColor: "bg-blue-500/10", iconColor: "text-blue-500" },
-    { icon: Code, bgColor: "bg-teal-500/10", iconColor: "text-teal-500" },
-    { icon: Languages, bgColor: "bg-orange-500/10", iconColor: "text-orange-500" },
-    { icon: Stethoscope, bgColor: "bg-rose-500/10", iconColor: "text-rose-500" },
-    { icon: Atom, bgColor: "bg-purple-500/10", iconColor: "text-purple-500" },
-    { icon: Calculator, bgColor: "bg-indigo-500/10", iconColor: "text-indigo-500" },
-    { icon: Globe, bgColor: "bg-green-500/10", iconColor: "text-green-500" },
-    { icon: Scale, bgColor: "bg-amber-500/10", iconColor: "text-amber-500" },
-    { icon: Palette, bgColor: "bg-pink-500/10", iconColor: "text-pink-500" },
-    { icon: Music, bgColor: "bg-cyan-500/10", iconColor: "text-cyan-500" },
-  ];
-  return styles[index % styles.length];
-};
 
 const Exams = () => {
   const navigate = useNavigate();
@@ -105,7 +78,7 @@ const Exams = () => {
     setMobileSearchOpen,
     // Handlers
     handleCategoryToggle,
-    handleMobileCategorySelect,
+    handleMobileCategorySelect: _handleMobileCategorySelect,
     handleDurationToggle,
     handleReset,
     toggleSaveExam,
@@ -126,23 +99,22 @@ const Exams = () => {
     <TooltipProvider>
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
         {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+        <header className="lg:hidden sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <div className="flex items-center justify-between px-4 h-14">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="font-bold text-lg text-foreground">Thư viện đề thi</h1>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button variant="ghost" size="icon" onClick={() => setMobileSearchOpen(!mobileSearchOpen)}>
                 <Search className="h-5 w-5" />
               </Button>
               <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 relative">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Lọc
+                  <Button variant="ghost" size="icon" className="relative">
+                    <SlidersHorizontal className="h-5 w-5" />
                     {hasActiveFilters && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+                      <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
                     )}
                   </Button>
                 </SheetTrigger>
@@ -182,36 +154,6 @@ const Exams = () => {
               </div>
             </div>
           )}
-
-          {/* Mobile Category Chips */}
-          <div className="px-4 pb-3 overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2 w-max">
-              <Button
-                variant={activeCategoryId === null ? "default" : "outline"}
-                size="sm"
-                className="rounded-full shrink-0"
-                onClick={() => handleMobileCategorySelect(null)}
-              >
-                Tất cả
-              </Button>
-              {categories.map((category, index) => {
-                const style = getCategoryStyle(category.name, index);
-                const IconComponent = style.icon;
-                return (
-                  <Button
-                    key={category.id}
-                    variant={activeCategoryId === category.id ? "default" : "outline"}
-                    size="sm"
-                    className="rounded-full shrink-0 gap-1.5"
-                    onClick={() => handleMobileCategorySelect(category.id)}
-                  >
-                    <IconComponent className="h-3.5 w-3.5" />
-                    {category.name}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
         </header>
 
         {/* Desktop Layout */}
@@ -361,50 +303,73 @@ const Exams = () => {
         </main>
 
         {/* Mobile Exam List */}
-        <main className="lg:hidden px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <Badge variant="secondary">{filteredExams.length} đề thi</Badge>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Sắp xếp" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recent">Mới nhất</SelectItem>
-                <SelectItem value="popular">Phổ biến</SelectItem>
-              </SelectContent>
-            </Select>
+        <main className="lg:hidden">
+          {/* Mobile Info Bar */}
+          <div className="px-4 py-3 bg-muted/30 border-b border-border/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">{filteredExams.length} đề thi</span>
+              </div>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-32 h-8 text-xs bg-background">
+                  <SelectValue placeholder="Sắp xếp" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Mới nhất</SelectItem>
+                  <SelectItem value="popular">Phổ biến</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            {paginatedExams.map((exam) => (
-              <ExamCard
-                key={exam.id}
-                id={exam.id}
-                title={exam.title}
-                slug={exam.slug}
-                description={exam.description}
-                questionCount={exam.question_count}
-                attemptCount={exam.attempt_count}
-                durationMinutes={exam.duration_minutes}
-                difficulty={exam.difficulty}
-                categoryName={exam.category?.name}
-                categoryIndex={getExamCategoryIndex(exam)}
-                creatorName={exam.creator_name}
-                creatorAvatar={exam.creator_avatar}
-                thumbnailUrl={exam.thumbnail_url}
-                source={exam.source}
-                isSaved={savedExams.has(exam.id)}
-                onToggleSave={toggleSaveExam}
-                reviewCount={exam.attempt_count || 0}
-              />
-            ))}
-          </div>
+          {/* Exam Cards */}
+          <div className="px-4 py-4">
+            {paginatedExams.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <h3 className="text-base font-semibold text-foreground mb-1">Không tìm thấy đề thi</h3>
+                <p className="text-sm text-muted-foreground mb-4">Thử thay đổi bộ lọc hoặc từ khóa</p>
+                {hasActiveFilters && (
+                  <Button onClick={handleReset} variant="outline" size="sm">
+                    <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                    Xóa bộ lọc
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {paginatedExams.map((exam) => (
+                  <ExamCard
+                    key={exam.id}
+                    id={exam.id}
+                    title={exam.title}
+                    slug={exam.slug}
+                    description={exam.description}
+                    questionCount={exam.question_count}
+                    attemptCount={exam.attempt_count}
+                    durationMinutes={exam.duration_minutes}
+                    difficulty={exam.difficulty}
+                    categoryName={exam.category?.name}
+                    categoryIndex={getExamCategoryIndex(exam)}
+                    creatorName={exam.creator_name}
+                    creatorAvatar={exam.creator_avatar}
+                    thumbnailUrl={exam.thumbnail_url}
+                    source={exam.source}
+                    isSaved={savedExams.has(exam.id)}
+                    onToggleSave={toggleSaveExam}
+                    reviewCount={exam.attempt_count || 0}
+                  />
+                ))}
+              </div>
+            )}
 
-          <ExamPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+            <ExamPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </main>
       </div>
     </TooltipProvider>
