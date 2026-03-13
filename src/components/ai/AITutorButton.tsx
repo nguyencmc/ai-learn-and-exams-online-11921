@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { AITutorChat } from './AITutorChat';
 
 interface AITutorButtonProps {

@@ -5,8 +5,6 @@ import { logger } from '@/lib/logger';
 const log = logger('EnhancedDashboardCharts');
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,

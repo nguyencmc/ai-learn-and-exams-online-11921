@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Tooltip,
@@ -17,9 +17,7 @@ import {
     Star,
     Clock,
     FileText,
-    Play,
-    Users,
-    BookOpen,
+
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ExamPreviewModal } from './ExamPreviewModal';
@@ -65,7 +63,7 @@ export function ExamCard({
     slug,
     description,
     questionCount = 0,
-    attemptCount = 0,
+    _attemptCount = 0,
     durationMinutes = 60,
     difficulty,
     categoryName,
@@ -87,7 +85,7 @@ export function ExamCard({
     const [leaderboardOpen, setLeaderboardOpen] = useState(false);
     const [historyOpen, setHistoryOpen] = useState(false);
 
-    const handleStartExam = () => {
+    const _handleStartExam = () => {
         const url = source === 'question_set'
             ? `/exam/${slug || id}?type=practice`
             : `/exam/${slug}`;

@@ -68,7 +68,7 @@ interface LessonEditorProps {
 
 export const LessonEditor = ({ 
   lesson, 
-  sectionIndex, 
+  _sectionIndex, 
   lessonIndex, 
   onUpdate, 
   onRemove 
@@ -76,7 +76,7 @@ export const LessonEditor = ({
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [_uploadProgress, setUploadProgress] = useState(0);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
 

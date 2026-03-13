@@ -1,6 +1,6 @@
  import { useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
- import { Input } from '@/components/ui/input';
+
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -65,7 +65,7 @@ export const PracticeQuestionEditor = ({
   imageBucket,
 }: PracticeQuestionEditorProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [_uploadingField, setUploadingField] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentUploadField, setCurrentUploadField] = useState<string>('');
   const { toast } = useToast();
@@ -97,7 +97,7 @@ export const PracticeQuestionEditor = ({
     onUpdate(index, 'correct_answer', newAnswers.join(','));
   };
 
-  const handleImageSelect = (field: string) => {
+  const _handleImageSelect = (field: string) => {
     setCurrentUploadField(field);
     fileInputRef.current?.click();
   };
@@ -133,7 +133,7 @@ export const PracticeQuestionEditor = ({
         title: 'Thành công',
         description: 'Đã tải ảnh lên',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Lỗi',
         description: 'Không thể tải ảnh lên',

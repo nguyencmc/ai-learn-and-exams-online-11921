@@ -124,7 +124,7 @@ export const AchievementsBadgeDisplay: React.FC<AchievementsBadgeDisplayProps> =
   const { 
     achievements, 
     earnedAchievements, 
-    unearnedAchievements,
+    unearnedAchievements: _unearnedAchievements,
     userAchievements,
     loading,
     getUserProgress

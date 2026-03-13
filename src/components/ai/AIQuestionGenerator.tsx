@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, Check, Plus, FileText } from 'lucide-react';
+import { Loader2, Sparkles, Check, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,7 +28,7 @@ interface AIQuestionGeneratorProps {
 }
 
 export const AIQuestionGenerator: React.FC<AIQuestionGeneratorProps> = ({ 
-  examId,
+  _examId,
   onQuestionsGenerated 
 }) => {
   const [content, setContent] = useState('');

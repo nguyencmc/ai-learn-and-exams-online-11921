@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/useToast';
-import { Download, MoreHorizontal, Shield, UserX, Users, CheckSquare, XSquare } from 'lucide-react';
+import { Download, MoreHorizontal, Shield, CheckSquare, XSquare } from 'lucide-react';
 
 interface UserWithRole {
   id: string;
@@ -134,7 +134,7 @@ export function UserBulkActions({
     });
   };
 
-  const toggleUser = (userId: string) => {
+  const _toggleUser = (userId: string) => {
     const newSet = new Set(selectedUsers);
     if (newSet.has(userId)) {
       newSet.delete(userId);
