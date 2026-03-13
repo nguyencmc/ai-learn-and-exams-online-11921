@@ -101,7 +101,7 @@ export function AIFlashcardGenerator({ onCardsGenerated, onClose }: AIFlashcardG
       if (error) throw error;
 
       if (data.flashcards && Array.isArray(data.flashcards)) {
-        setGeneratedCards(data.flashcards.map((card: any) => ({ ...card, selected: true })));
+        setGeneratedCards(data.flashcards.map((card: Record<string, unknown>) => ({ ...card, selected: true })));
         setStep('review');
         toast.success(`Đã tạo ${data.flashcards.length} flashcard`);
       } else {

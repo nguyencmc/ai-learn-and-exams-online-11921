@@ -738,7 +738,7 @@ const AdminDashboard = () => {
                           checked={selectedUsers.has(u.user_id)}
                           onToggle={(id) => {
                             const s = new Set(selectedUsers);
-                            s.has(id) ? s.delete(id) : s.add(id);
+                            if (s.has(id)) { s.delete(id); } else { s.add(id); }
                             setSelectedUsers(s);
                           }}
                         />
@@ -806,7 +806,7 @@ const AdminDashboard = () => {
                             checked={selectedUsers.has(u.user_id)}
                             onToggle={(id) => {
                               const s = new Set(selectedUsers);
-                              s.has(id) ? s.delete(id) : s.add(id);
+                              if (s.has(id)) { s.delete(id); } else { s.add(id); }
                               setSelectedUsers(s);
                             }}
                           />

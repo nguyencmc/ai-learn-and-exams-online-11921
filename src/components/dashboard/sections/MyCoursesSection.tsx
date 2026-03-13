@@ -127,7 +127,7 @@ export function MyCoursesSection() {
         });
       }
 
-      const enrichedEnrolled = enrolled.map((e: any) => {
+      const enrichedEnrolled = enrolled.map((e: Record<string, unknown>) => {
         const progressInfo = progressMap.get(e.course_id);
         return {
           ...e,
@@ -137,10 +137,10 @@ export function MyCoursesSection() {
       });
 
       // Filter courses: in progress (< 100%) and completed (100% or completed_at is not null)
-      const inProgress = enrichedEnrolled.filter((e: any) => 
+      const inProgress = enrichedEnrolled.filter((e: Record<string, unknown>) => 
         e.progress_percentage < 100 && !e.completed_at
       );
-      const completed = enrichedEnrolled.filter((e: any) => 
+      const completed = enrichedEnrolled.filter((e: Record<string, unknown>) => 
         e.progress_percentage >= 100 || e.completed_at
       );
       

@@ -157,7 +157,7 @@ export function OverviewSection({
     const items: ContinueLearningItem[] = [];
     
     if (enrollments) {
-      enrollments.forEach((e: any) => {
+      enrollments.forEach((e: { course_id: string; progress_percentage: number; updated_at: string; courses: { id: string; title: string; slug: string; image_url: string } | null }) => {
         if (e.courses) {
           items.push({
             id: e.course_id,

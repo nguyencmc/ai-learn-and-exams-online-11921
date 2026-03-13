@@ -130,7 +130,7 @@ const FlashcardEditor = () => {
 
   const updateCard = (index: number, field: keyof Flashcard, value: string | number) => {
     const updated = [...cards];
-    (updated[index] as any)[field] = value;
+    (updated[index] as Record<string, string | number>)[field] = value;
     setCards(updated);
   };
 

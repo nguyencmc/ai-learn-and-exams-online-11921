@@ -101,7 +101,7 @@ const ExamDetail = () => {
           attempt_count: data.attempt_count,
           pass_rate: data.pass_rate,
           category_name: (data.exam_categories as { name: string } | null)?.name || null,
-          is_proctored: (data as any).is_proctored ?? false,
+          is_proctored: (data as Record<string, unknown>).is_proctored as boolean ?? false,
         };
       }
     },

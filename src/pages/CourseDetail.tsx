@@ -18,7 +18,7 @@ import {
   Star,
   Award,
   Globe,
-  Infinity,
+  Infinity as InfinityIcon,
   FileText,
   Download,
   CheckCircle,
@@ -677,7 +677,7 @@ const CourseDetail = () => {
                         Tài liệu tải xuống
                       </li>
                       <li className="flex items-center gap-2">
-                        <Infinity className="w-4 h-4 text-muted-foreground" />
+                        <InfinityIcon className="w-4 h-4 text-muted-foreground" />
                         Truy cập trọn đời
                       </li>
                       <li className="flex items-center gap-2">

@@ -214,7 +214,7 @@ export function PopularExamsChart() {
 
     // Group by exam
     const examMap = new Map<string, { title: string; attempts: number; totalScore: number }>();
-    (attempts || []).forEach((a: any) => {
+    (attempts || []).forEach((a: { exam_id: string; score: number | null; exams: { title: string } | null }) => {
       const id = a.exam_id;
       const title = a.exams?.title || 'Unknown';
       if (!examMap.has(id)) {

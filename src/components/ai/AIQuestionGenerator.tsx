@@ -65,7 +65,7 @@ export const AIQuestionGenerator: React.FC<AIQuestionGeneratorProps> = ({
 
       if (data.questions) {
         setGeneratedQuestions(data.questions);
-        setSelectedQuestions(new Set(data.questions.map((_: any, i: number) => i)));
+        setSelectedQuestions(new Set(data.questions.map((_: unknown, i: number) => i)));
         toast({
           title: 'Thành công',
           description: `Đã tạo ${data.questions.length} câu hỏi!`,

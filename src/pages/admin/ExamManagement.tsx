@@ -95,7 +95,7 @@ const ExamManagement = () => {
       q,
       supabase.from('exam_categories').select('id, name, slug'),
     ]);
-    setExams((examsData || []).map(e => ({ ...e, is_proctored: (e as any).is_proctored ?? false })));
+    setExams((examsData || []).map(e => ({ ...e, is_proctored: (e as Record<string, unknown>).is_proctored as boolean ?? false })));
     setCategories(catsData || []);
     setLoading(false);
   };
@@ -119,7 +119,7 @@ const ExamManagement = () => {
     const next = !exam.is_proctored;
     const { error } = await supabase
       .from('exams')
-      .update({ is_proctored: next } as any)
+      .update({ is_proctored: next } as Record<string, unknown>)
       .eq('id', exam.id);
     if (error) {
       toast({ title: 'Lỗi', description: 'Không thể cập nhật', variant: 'destructive' });

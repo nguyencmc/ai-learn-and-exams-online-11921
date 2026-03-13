@@ -50,7 +50,7 @@ export interface PracticeQuestion {
 interface PracticeQuestionEditorProps {
   question: PracticeQuestion;
   index: number;
-  onUpdate: (index: number, field: keyof PracticeQuestion, value: any) => void;
+  onUpdate: (index: number, field: keyof PracticeQuestion, value: PracticeQuestion[keyof PracticeQuestion]) => void;
   onRemove: (index: number) => void;
   onImageUpload?: (file: File, questionIndex: number, field: string) => Promise<string>;
   imageBucket?: string;

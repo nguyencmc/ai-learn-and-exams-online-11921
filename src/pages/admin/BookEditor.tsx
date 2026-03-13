@@ -139,7 +139,7 @@ const BookEditor = () => {
             setChapters(chaptersData.map(ch => ({
                 id: ch.id,
                 title: ch.title,
-                content: (ch as any).content || '',
+                content: (ch as Record<string, unknown>).content as string || '',
                 chapter_order: ch.chapter_order,
             })));
         }
