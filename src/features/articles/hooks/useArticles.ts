@@ -156,7 +156,7 @@ export function useArticles(options: UseArticlesOptions = {}) {
       });
 
       fetchArticles();
-    } catch (err) {
+    } catch {
       toast({
         title: 'Lỗi',
         description: 'Không thể xóa bài viết',

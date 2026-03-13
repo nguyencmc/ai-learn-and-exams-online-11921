@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/useToast';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, Send, X, Plus, FileText, Image } from 'lucide-react';
+import { Save, Send, X, Plus, FileText } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 const log = logger('ArticleEditorPage');

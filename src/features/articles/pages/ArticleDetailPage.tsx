@@ -6,7 +6,7 @@ import { ArticleCard, ArticleSidebar } from '../components';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
@@ -14,7 +14,6 @@ import {
   Clock,
   Eye,
   MessageSquare,
-  Share2,
   Edit,
   Trash2,
   Reply,

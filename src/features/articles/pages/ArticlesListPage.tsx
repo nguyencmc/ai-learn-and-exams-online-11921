@@ -13,7 +13,6 @@ import {
   Plus,
   BookOpen,
   FileText,
-  SlidersHorizontal,
   LayoutGrid,
   List
 } from 'lucide-react';

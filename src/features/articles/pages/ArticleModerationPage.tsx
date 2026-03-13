@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { useArticles } from '../hooks';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,11 +24,9 @@ import {
   XCircle, 
   Eye, 
   Clock,
-  FileText,
-  User,
-  MessageSquare
+  FileText
 } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Article } from '../types';
 
@@ -36,7 +34,7 @@ const ArticleModerationPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isAdmin, isModerator, loading: roleLoading } = usePermissionsContext();
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
   
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
@@ -44,7 +42,7 @@ const ArticleModerationPage = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
   
-  const { articles, loading, approveArticle, rejectArticle, refetch } = useArticles({
+  const { articles, loading, approveArticle, rejectArticle, refetch: _refetch } = useArticles({
     status: activeTab,
   });
 

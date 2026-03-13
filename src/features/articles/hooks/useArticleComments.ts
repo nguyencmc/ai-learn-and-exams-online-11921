@@ -90,7 +90,7 @@ export function useArticleComments(articleId: string | undefined) {
 
       fetchComments();
       return true;
-    } catch (_err) {
+    } catch {
       toast({
         title: 'Lỗi',
         description: 'Không thể thêm bình luận',
@@ -117,7 +117,7 @@ export function useArticleComments(articleId: string | undefined) {
 
       fetchComments();
       return true;
-    } catch (_err) {
+    } catch {
       toast({
         title: 'Lỗi',
         description: 'Không thể cập nhật bình luận',
@@ -143,7 +143,7 @@ export function useArticleComments(articleId: string | undefined) {
 
       fetchComments();
       return true;
-    } catch (_err) {
+    } catch {
       toast({
         title: 'Lỗi',
         description: 'Không thể xóa bình luận',

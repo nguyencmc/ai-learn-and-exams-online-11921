@@ -13,7 +13,6 @@ import {
     ArrowLeft,
     Calendar,
     Eye,
-    User,
     Tag,
     Clock,
     CheckCircle,
