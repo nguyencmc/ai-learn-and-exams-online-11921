@@ -56,6 +56,13 @@ import {
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/useToast';
 import { createAuditLog } from '@/hooks/useAuditLogs';
+import { getErrorMessage } from '@/lib/utils';
+
+interface ImportResultItem {
+  success: boolean;
+  email?: string;
+  error?: string;
+}
 
 interface EnrichedUser {
   id: string;
@@ -225,10 +232,10 @@ const UserManagement = () => {
       setCreateDialogOpen(false);
       resetCreateForm();
       fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Lỗi",
-        description: err.message || "Không thể tạo người dùng",
+        description: getErrorMessage(err) || "Không thể tạo người dùng",
         variant: "destructive",
       });
     } finally {
@@ -276,10 +283,10 @@ const UserManagement = () => {
       setPasswordDialogOpen(false);
       setSelectedUser(null);
       setNewPassword('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Lỗi",
-        description: err.message || "Không thể đổi mật khẩu",
+        description: getErrorMessage(err) || "Không thể đổi mật khẩu",
         variant: "destructive",
       });
     } finally {
@@ -317,10 +324,10 @@ const UserManagement = () => {
       setDeleteDialogOpen(false);
       setUserToDelete(null);
       fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Lỗi",
-        description: err.message || "Không thể xóa người dùng",
+        description: getErrorMessage(err) || "Không thể xóa người dùng",
         variant: "destructive",
       });
     } finally {
@@ -359,10 +366,10 @@ const UserManagement = () => {
       });
       
       fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Lỗi",
-        description: err.message || "Không thể cập nhật vai trò",
+        description: getErrorMessage(err) || "Không thể cập nhật vai trò",
         variant: "destructive",
       });
     }
@@ -385,10 +392,10 @@ const UserManagement = () => {
       });
       
       fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Lỗi",
-        description: err.message || "Không thể cập nhật thời hạn",
+        description: getErrorMessage(err) || "Không thể cập nhật thời hạn",
         variant: "destructive",
       });
     }
@@ -455,8 +462,8 @@ const UserManagement = () => {
         throw new Error(result.error);
       }
 
-      const successCount = result.results?.filter((r: any) => r.success).length || 0;
-      const failCount = result.results?.filter((r: any) => !r.success).length || 0;
+      const successCount = result.results?.filter((r: ImportResultItem) => r.success).length || 0;
+      const failCount = result.results?.filter((r: ImportResultItem) => !r.success).length || 0;
 
       toast({
         title: "Import hoàn tất",
@@ -465,10 +472,10 @@ const UserManagement = () => {
       
       setBulkDialogOpen(false);
       fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Lỗi",
-        description: err.message || "Không thể import người dùng",
+        description: getErrorMessage(err) || "Không thể import người dùng",
         variant: "destructive",
       });
     } finally {

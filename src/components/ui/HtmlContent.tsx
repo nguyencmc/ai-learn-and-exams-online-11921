@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 interface HtmlContentProps {
   html: string | null | undefined;
@@ -140,7 +141,7 @@ export const HtmlContent = ({ html, className, onClickImage }: HtmlContentProps)
           "[&_code]:bg-transparent [&_code]:text-inherit [&_code]:p-0",
           className
         )}
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
       />
       <style>{`
         /* ── Copy button ── */

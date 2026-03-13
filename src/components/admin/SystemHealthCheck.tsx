@@ -17,7 +17,7 @@ import {
   Clock,
   Zap,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getErrorMessage } from '@/lib/utils';
 
 type HealthStatus = 'checking' | 'healthy' | 'degraded' | 'down';
 
@@ -117,11 +117,11 @@ export function SystemHealthCheck() {
           lastChecked: new Date(),
         });
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         updateCheck('Database', {
           status: 'down',
           latency: Math.round(performance.now() - start),
-          details: `Không kết nối được: ${e.message}`,
+          details: `Không kết nối được: ${getErrorMessage(e)}`,
           lastChecked: new Date(),
         });
         return false;
@@ -150,11 +150,11 @@ export function SystemHealthCheck() {
           lastChecked: new Date(),
         });
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         updateCheck('Auth Service', {
           status: 'down',
           latency: Math.round(performance.now() - start),
-          details: `Lỗi: ${e.message}`,
+          details: `Lỗi: ${getErrorMessage(e)}`,
           lastChecked: new Date(),
         });
         return false;
@@ -194,11 +194,11 @@ export function SystemHealthCheck() {
           lastChecked: new Date(),
         });
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         updateCheck('RBAC System', {
           status: 'down',
           latency: Math.round(performance.now() - start),
-          details: `Lỗi: ${e.message}`,
+          details: `Lỗi: ${getErrorMessage(e)}`,
           lastChecked: new Date(),
         });
         return false;
@@ -222,10 +222,11 @@ export function SystemHealthCheck() {
           lastChecked: new Date(),
         });
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         const latency = Math.round(performance.now() - start);
         // Network error means truly down; other errors mean function is reachable
-        if (e.message?.includes('NetworkError') || e.message?.includes('fetch')) {
+        const errMsg = getErrorMessage(e);
+        if (errMsg.includes('NetworkError') || errMsg.includes('fetch')) {
           updateCheck('Edge Functions', {
             status: 'down',
             latency,
@@ -268,11 +269,11 @@ export function SystemHealthCheck() {
           lastChecked: new Date(),
         });
         return true;
-      } catch (e: any) {
+      } catch (e: unknown) {
         updateCheck('Storage', {
           status: 'down',
           latency: Math.round(performance.now() - start),
-          details: `Lỗi: ${e.message}`,
+          details: `Lỗi: ${getErrorMessage(e)}`,
           lastChecked: new Date(),
         });
         return false;

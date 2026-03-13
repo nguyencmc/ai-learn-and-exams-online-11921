@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -525,7 +526,7 @@ const ExamTaking = () => {
                     <span className="font-medium">Câu {index + 1}</span>
                   </div>
                   <div className="p-4">
-                    <div className="font-medium mb-4 prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md" dangerouslySetInnerHTML={{ __html: question.question_text }} />
+                    <div className="font-medium mb-4 prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md" dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.question_text) }} />
                     <div className="grid gap-2">
                       {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map((option) => {
                         const optionKey = `option_${option.toLowerCase()}` as keyof Question;
@@ -555,7 +556,7 @@ const ExamTaking = () => {
                             }`}>
                               {option}
                             </span>
-                            <span className="prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md" dangerouslySetInnerHTML={{ __html: optionText as string }} />
+                            <span className="prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md" dangerouslySetInnerHTML={{ __html: sanitizeHtml(optionText as string) }} />
                           </div>
                         );
                       })}
@@ -563,7 +564,7 @@ const ExamTaking = () => {
                     {question.explanation && (
                       <div className="mt-4 p-4 bg-muted rounded-lg">
                         <p className="text-sm font-semibold mb-1">Giải thích:</p>
-                        <div className="text-sm prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md" dangerouslySetInnerHTML={{ __html: question.explanation }} />
+                        <div className="text-sm prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md" dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.explanation) }} />
                       </div>
                     )}
                     <AIExplanation question={question} userAnswer={userAnswers.join(', ')} />
@@ -711,7 +712,7 @@ const ExamTaking = () => {
 
                 {/* Question Text */}
                 <div className="bg-muted/50 rounded-xl p-6 mb-6">
-                  <div className="text-lg prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md" dangerouslySetInnerHTML={{ __html: currentQuestion?.question_text ?? '' }} />
+                  <div className="text-lg prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md" dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQuestion?.question_text ?? '') }} />
                 </div>
 
                 {/* Answer Options */}
@@ -742,7 +743,7 @@ const ExamTaking = () => {
                           }`}>
                             {option}
                           </span>
-                          <span className="flex-1 prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md" dangerouslySetInnerHTML={{ __html: optionText as string }} />
+                          <span className="flex-1 prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md" dangerouslySetInnerHTML={{ __html: sanitizeHtml(optionText as string) }} />
                           {isSelected && (
                             <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
                           )}

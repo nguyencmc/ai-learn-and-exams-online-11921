@@ -101,7 +101,11 @@ export function DatabaseBackup() {
   const toggleTable = useCallback((table: string) => {
     setSelectedTables(prev => {
       const next = new Set(prev);
-      next.has(table) ? next.delete(table) : next.add(table);
+      if (next.has(table)) {
+        next.delete(table);
+      } else {
+        next.add(table);
+      }
       return next;
     });
   }, []);
@@ -110,7 +114,13 @@ export function DatabaseBackup() {
     setSelectedTables(prev => {
       const next = new Set(prev);
       const allSelected = tables.every(t => next.has(t));
-      tables.forEach(t => allSelected ? next.delete(t) : next.add(t));
+      tables.forEach(t => {
+        if (allSelected) {
+          next.delete(t);
+        } else {
+          next.add(t);
+        }
+      });
       return next;
     });
   }, []);
@@ -121,7 +131,11 @@ export function DatabaseBackup() {
   const toggleImportTable = useCallback((table: string) => {
     setImportSelectedTables(prev => {
       const next = new Set(prev);
-      next.has(table) ? next.delete(table) : next.add(table);
+      if (next.has(table)) {
+        next.delete(table);
+      } else {
+        next.add(table);
+      }
       return next;
     });
   }, []);

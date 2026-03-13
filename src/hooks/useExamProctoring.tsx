@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
+
+const log = logger('ExamProctoring');
 
 interface ProctorEvent {
   type: 'tab_switch' | 'window_blur' | 'face_not_detected' | 'multiple_faces' | 'snapshot' | 'session_start' | 'session_end' | 'camera_enabled' | 'camera_disabled';
@@ -70,7 +73,7 @@ export function useExamProctoring({
       
       await supabase.from('exam_proctoring_logs').insert(insertData as never);
     } catch (error) {
-      console.error('Failed to log proctoring event:', error);
+      log.error('Failed to log proctoring event', error);
     }
   }, [enabled, examId, userId]);
 
@@ -113,7 +116,7 @@ export function useExamProctoring({
             });
 
           if (uploadError) {
-            console.error('Failed to upload snapshot:', uploadError);
+            log.error('Failed to upload snapshot', uploadError);
             resolve(null);
             return;
           }
@@ -121,7 +124,7 @@ export function useExamProctoring({
           // Get the path (not public URL since bucket is private)
           resolve(fileName);
         } catch (error) {
-          console.error('Error capturing snapshot:', error);
+          log.error('Error capturing snapshot', error);
           resolve(null);
         }
       }, 'image/jpeg', 0.8);
@@ -140,7 +143,7 @@ export function useExamProctoring({
     setViolations(prev => {
       // Cap violations to prevent unlimited growth
       if (prev.length >= maxViolations) {
-        console.warn(`Proctoring: max violations (${maxViolations}) reached, new violation dropped:`, event.type);
+        log.warn(`Max violations (${maxViolations}) reached, new violation dropped: ${event.type}`);
         return prev;
       }
       return [...prev, event];
@@ -182,7 +185,7 @@ export function useExamProctoring({
       toast.success('Camera đã được bật');
       return true;
     } catch (error) {
-      console.error('Failed to start camera:', error);
+      log.error('Failed to start camera', error);
       toast.error('Không thể bật camera. Vui lòng kiểm tra quyền truy cập.');
       return false;
     } finally {

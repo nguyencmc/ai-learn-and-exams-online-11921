@@ -1,6 +1,9 @@
 import { createContext, useContext, ReactNode, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
+
+const log = logger('PermissionsContext');
 
 export interface Permission {
   permission_name: string;
@@ -60,20 +63,20 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
       ]);
 
       if (rolesResult.error) {
-        console.error('Error fetching roles:', rolesResult.error);
+        log.error('Error fetching roles', rolesResult.error);
         setRoles([]);
       } else {
         setRoles((rolesResult.data || []).map(r => r.role as AppRole));
       }
 
       if (permissionsResult.error) {
-        console.error('Error fetching permissions:', permissionsResult.error);
+        log.error('Error fetching permissions', permissionsResult.error);
         setPermissions([]);
       } else {
         setPermissions(permissionsResult.data || []);
       }
     } catch (err) {
-      console.error('Error:', err);
+      log.error('Error fetching roles/permissions', err);
       setRoles([]);
       setPermissions([]);
     } finally {

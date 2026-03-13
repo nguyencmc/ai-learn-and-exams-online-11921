@@ -26,6 +26,43 @@ import {
 import { useToast } from '@/hooks/useToast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { getErrorMessage } from '@/lib/utils';
+
+interface RawQuestionInput {
+  question_text?: string;
+  question?: string;
+  text?: string;
+  option_a?: string;
+  optionA?: string;
+  a?: string;
+  option_b?: string;
+  optionB?: string;
+  b?: string;
+  option_c?: string;
+  optionC?: string;
+  c?: string;
+  option_d?: string;
+  optionD?: string;
+  d?: string;
+  option_e?: string;
+  optionE?: string;
+  e?: string;
+  option_f?: string;
+  optionF?: string;
+  f?: string;
+  option_g?: string;
+  optionG?: string;
+  g?: string;
+  option_h?: string;
+  optionH?: string;
+  h?: string;
+  options?: string[];
+  correct_answer?: string;
+  correctAnswer?: string;
+  answer?: string;
+  explanation?: string;
+  [key: string]: unknown;
+}
 
 interface Question {
   id?: string;
@@ -340,7 +377,7 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
       } else if (fileName.endsWith('.json')) {
         const jsonData = JSON.parse(content);
         const questionsArray = Array.isArray(jsonData) ? jsonData : jsonData.questions || [];
-        parsedQuestions = questionsArray.map((q: any, index: number) => ({
+        parsedQuestions = questionsArray.map((q: RawQuestionInput, index: number) => ({
           question_text: q.question_text || q.question || q.text || '',
           option_a: q.option_a || q.optionA || q.options?.[0] || q.a || '',
           option_b: q.option_b || q.optionB || q.options?.[1] || q.b || '',
@@ -368,10 +405,10 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
         title: "Import thành công",
         description: `Đã thêm ${parsedQuestions.length} câu hỏi`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Lỗi import",
-        description: error.message || "Không thể đọc file",
+        description: getErrorMessage(error) || "Không thể đọc file",
         variant: "destructive",
       });
     } finally {
@@ -394,7 +431,7 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
         // JSON format
         const jsonData = JSON.parse(trimmedInput);
         const questionsArray = Array.isArray(jsonData) ? jsonData : jsonData.questions || [];
-        parsedQuestions = questionsArray.map((q: any, index: number) => ({
+        parsedQuestions = questionsArray.map((q: RawQuestionInput, index: number) => ({
           question_text: q.question_text || q.question || q.text || '',
           option_a: q.option_a || q.optionA || q.options?.[0] || q.a || '',
           option_b: q.option_b || q.optionB || q.options?.[1] || q.b || '',
@@ -434,10 +471,10 @@ export const ImportExportQuestions = ({ questions, onImport }: ImportExportQuest
         title: "Import thành công",
         description: `Đã thêm ${parsedQuestions.length} câu hỏi`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Lỗi import",
-        description: error.message || "Không thể parse dữ liệu",
+        description: getErrorMessage(error) || "Không thể parse dữ liệu",
         variant: "destructive",
       });
     }

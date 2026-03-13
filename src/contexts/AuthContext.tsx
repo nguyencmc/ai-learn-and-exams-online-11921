@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
+
+const log = logger('AuthContext');
 
 interface AuthContextType {
   user: User | null;
@@ -42,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
     }).catch((error) => {
-      console.error('Failed to get initial session:', error);
+      log.error('Failed to get initial session', error);
       if (!initialSessionSet) {
         setLoading(false);
       }
@@ -67,13 +70,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) {
-        console.error('Sign up failed:', error.message);
+        log.error('Sign up failed', error.message);
       }
 
       return { error: error as Error | null };
     } catch (err) {
       const error = err instanceof Error ? err : new Error('An unexpected error occurred during sign up');
-      console.error('Unexpected sign up error:', error);
+      log.error('Unexpected sign up error', error);
       return { error };
     }
   }, []);
@@ -86,13 +89,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) {
-        console.error('Sign in failed:', error.message);
+        log.error('Sign in failed', error.message);
       }
 
       return { error: error as Error | null };
     } catch (err) {
       const error = err instanceof Error ? err : new Error('An unexpected error occurred during sign in');
-      console.error('Unexpected sign in error:', error);
+      log.error('Unexpected sign in error', error);
       return { error };
     }
   }, []);
@@ -101,10 +104,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error('Sign out failed:', error.message);
+        log.error('Sign out failed', error.message);
       }
     } catch (err) {
-      console.error('Unexpected sign out error:', err);
+      log.error('Unexpected sign out error', err);
     }
   }, []);
 
