@@ -38,7 +38,7 @@ interface LeaderboardEntry {
 }
 
 export function AchievementsSection() {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [activeTab, setActiveTab] = useState('earned');
   const { 
     earnedAchievements, 

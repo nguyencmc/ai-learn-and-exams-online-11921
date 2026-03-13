@@ -100,8 +100,8 @@ const quickActions = [
 export function OverviewSection({
   stats,
   weeklyProgress,
-  levelProgress,
-  pointsToNextLevel,
+  levelProgress: _levelProgress,
+  pointsToNextLevel: _pointsToNextLevel,
   accuracy,
 }: OverviewSectionProps) {
   const { user } = useAuth();

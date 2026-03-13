@@ -2,7 +2,6 @@ import {
   BarChart3, 
   GraduationCap, 
   Layers, 
-  Clock, 
   Trophy, 
   Settings,
   Users

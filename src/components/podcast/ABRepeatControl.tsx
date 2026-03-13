@@ -23,8 +23,8 @@ const formatTime = (seconds: number): string => {
 export const ABRepeatControl = ({
   pointA,
   pointB,
-  currentTime,
-  duration,
+  currentTime: _currentTime,
+  duration: _duration,
   onSetPointA,
   onSetPointB,
   onClear,

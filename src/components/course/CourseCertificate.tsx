@@ -152,7 +152,7 @@ export const CourseCertificate = ({
           text: `Tôi đã hoàn thành khóa học "${courseTitle}" trên AI-Exam.cloud!`,
           url: verifyUrl,
         });
-      } catch (error) {
+      } catch {
         // User cancelled share
       }
     } else {
