@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import { MiniPlayerProvider } from "@/contexts/MiniPlayerContext";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { MiniPlayer } from "@/components/podcast/MiniPlayer";
 import { ErrorBoundary } from "@/components/layouts/ErrorBoundary";
 
