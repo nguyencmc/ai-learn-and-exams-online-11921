@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/useToast';
@@ -47,7 +47,7 @@ export const useAchievements = () => {
     setAchievements(data || []);
   };
 
-  const fetchUserAchievements = async () => {
+  const fetchUserAchievements = useCallback(async () => {
     if (!user) return;
 
     const { data } = await supabase
@@ -56,7 +56,7 @@ export const useAchievements = () => {
       .eq('user_id', user.id);
     
     setUserAchievements(data || []);
-  };
+  }, [user]);
 
   const checkAndAwardAchievements = async (progress: UserProgress) => {
     if (!user) return;
@@ -197,7 +197,7 @@ export const useAchievements = () => {
     };
 
     init();
-  }, [user]);
+  }, [user, fetchUserAchievements]);
 
   const earnedAchievementIds = new Set(userAchievements.map(ua => ua.achievement_id));
   

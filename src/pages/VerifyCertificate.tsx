@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,13 +30,7 @@ const VerifyCertificate = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    if (certificateNumber) {
-      verifyCertificate();
-    }
-  }, [certificateNumber]);
-
-  const verifyCertificate = async () => {
+  const verifyCertificate = useCallback(async () => {
     setLoading(true);
     setError(false);
     
@@ -81,7 +75,13 @@ const VerifyCertificate = () => {
     }
     
     setLoading(false);
-  };
+  }, [certificateNumber]);
+
+  useEffect(() => {
+    if (certificateNumber) {
+      verifyCertificate();
+    }
+  }, [certificateNumber, verifyCertificate]);
 
   return (
     <div className="min-h-screen bg-background">

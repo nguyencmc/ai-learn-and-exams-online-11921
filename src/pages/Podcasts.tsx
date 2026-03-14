@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,11 +70,7 @@ const Podcasts = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [language, setLanguage] = useState("all");
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedCategory]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     
     // Fetch categories
@@ -101,7 +97,11 @@ const Podcasts = () => {
     setPodcasts(podcastsData || []);
     
     setLoading(false);
-  };
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filteredPodcasts = podcasts.filter((pod) =>
     pod.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

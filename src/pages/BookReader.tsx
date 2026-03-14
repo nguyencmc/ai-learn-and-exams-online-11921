@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
+const PAGE_BREAK_REGEX = /(?:^|\n)(?:---|<!--\s*page\s*-->)\s*(?:\n|$)/gi;
+
 interface Book {
   id: string;
   title: string;
@@ -154,9 +156,6 @@ const BookReader = () => {
     enabled: !!book?.id && !!user?.id,
   });
 
-  // Page break markers
-  const PAGE_BREAK_REGEX = /(?:^|\n)(?:---|<!--\s*page\s*-->)\s*(?:\n|$)/gi;
-
   // Split content into pages
   const pages = useMemo(() => {
     if (!book?.content) return [];
@@ -278,7 +277,7 @@ const BookReader = () => {
       }
     }, 30000);
     return () => clearInterval(saveTimer);
-  }, [currentPage, readingTime, user, book, charsPerPage]);
+  }, [currentPage, readingTime, user, book, charsPerPage, saveProgressMutation]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -288,7 +287,7 @@ const BookReader = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentPage, totalPages, isFlipping]);
+  }, [goToNextPage, goToPrevPage]);
 
   // Page flip with animation
   const goToNextPage = useCallback(() => {

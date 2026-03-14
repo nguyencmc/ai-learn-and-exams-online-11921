@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -388,12 +388,7 @@ function MySetsTab() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchMySets();
-  }, [user]);
-
-  const fetchMySets = async () => {
+  const fetchMySets = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('question_sets')
@@ -402,7 +397,12 @@ function MySetsTab() {
       .order('created_at', { ascending: false });
     if (!error && data) setSets(data);
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchMySets();
+  }, [user, fetchMySets]);
 
   const filteredSets = useMemo(
     () => sets.filter((s) => {

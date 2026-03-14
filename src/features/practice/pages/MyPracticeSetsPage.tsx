@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,15 +59,7 @@ export default function MyPracticeSetsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    fetchMySets();
-  }, [user]);
-
-  const fetchMySets = async () => {
+  const fetchMySets = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('question_sets')
@@ -79,7 +71,15 @@ export default function MyPracticeSetsPage() {
       setSets(data);
     }
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    fetchMySets();
+  }, [user, navigate, fetchMySets]);
 
   const togglePublish = async (set: QuestionSet) => {
     const newStatus = !set.is_published;

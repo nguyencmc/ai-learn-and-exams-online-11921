@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,17 +96,7 @@ const CourseDetail = () => {
   const [liveRating, setLiveRating] = useState<{ avg: number; count: number } | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
 
-  useEffect(() => {
-    fetchCourse();
-  }, [id]);
-
-  useEffect(() => {
-    if (user && id) {
-      checkEnrollment();
-    }
-  }, [user, id]);
-
-  const fetchCourse = async () => {
+  const fetchCourse = useCallback(async () => {
     if (!id) return;
     
     setLoading(true);
@@ -151,9 +141,9 @@ const CourseDetail = () => {
       log.error("Error fetching course", error);
     }
     setLoading(false);
-  };
+  }, [id]);
 
-  const checkEnrollment = async () => {
+  const checkEnrollment = useCallback(async () => {
     if (!user || !id) return;
     
     const { data, error } = await supabase
@@ -166,7 +156,17 @@ const CourseDetail = () => {
     if (!error && data) {
       setIsEnrolled(true);
     }
-  };
+  }, [user, id]);
+
+  useEffect(() => {
+    fetchCourse();
+  }, [fetchCourse]);
+
+  useEffect(() => {
+    if (user && id) {
+      checkEnrollment();
+    }
+  }, [user, id, checkEnrollment]);
 
   const handleEnroll = async () => {
     if (!user || !id) return;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -113,13 +113,7 @@ const CourseViewer = () => {
   const [_videoDuration, setVideoDuration] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      fetchCourseData();
-    }
-  }, [id, user]);
-
-  const fetchCourseData = async () => {
+  const fetchCourseData = useCallback(async () => {
     try {
       // Fetch course
       const { data: courseData, error: courseError } = await supabase
@@ -205,7 +199,13 @@ const CourseViewer = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user]);
+
+  useEffect(() => {
+    if (id) {
+      fetchCourseData();
+    }
+  }, [id, user, fetchCourseData]);
 
   const getTotalLessons = () => {
     return sections.reduce((acc, section) => acc + section.lessons.length, 0);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -52,18 +52,7 @@ const Settings = () => {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-      return;
-    }
-    
-    if (user) {
-      fetchProfile();
-    }
-  }, [user, authLoading, navigate]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -108,7 +97,18 @@ const Settings = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+      return;
+    }
+    
+    if (user) {
+      fetchProfile();
+    }
+  }, [user, authLoading, navigate, fetchProfile]);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!user || !event.target.files || event.target.files.length === 0) return;

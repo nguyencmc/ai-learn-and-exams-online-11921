@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -80,11 +80,7 @@ const Courses = () => {
   const { user } = useAuth();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
-  useEffect(() => {
-    fetchCourses();
-  }, [selectedCategory, sortBy]);
-
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     setLoading(true);
     let query = supabase
       .from("courses")
@@ -103,7 +99,11 @@ const Courses = () => {
       setCourses(data || []);
     }
     setLoading(false);
-  };
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   const filteredCourses = courses.filter((course) =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase())

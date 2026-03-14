@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -79,7 +79,7 @@ export const useStudyGroups = () => {
     }
   };
 
-  const fetchMyGroups = async () => {
+  const fetchMyGroups = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -106,7 +106,7 @@ export const useStudyGroups = () => {
     } catch (error) {
       log.error('Error fetching my groups', error);
     }
-  };
+  }, [user]);
 
   const createGroup = async (name: string, description: string, category: string, isPublic: boolean) => {
     if (!user) {
@@ -209,7 +209,7 @@ export const useStudyGroups = () => {
       setLoading(false);
     };
     loadData();
-  }, [user]);
+  }, [user, fetchMyGroups]);
 
   return {
     groups,
@@ -232,7 +232,7 @@ export const useStudyGroupDetail = (groupId: string) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchGroup = async () => {
+  const fetchGroup = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('study_groups')
@@ -245,9 +245,9 @@ export const useStudyGroupDetail = (groupId: string) => {
     } catch (error) {
       log.error('Error fetching group', error);
     }
-  };
+  }, [groupId]);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     try {
       const { data: membersData, error } = await supabase
         .from('study_group_members')
@@ -281,9 +281,9 @@ export const useStudyGroupDetail = (groupId: string) => {
     } catch (error) {
       log.error('Error fetching members', error);
     }
-  };
+  }, [groupId, user]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     try {
       const { data: messagesData, error } = await supabase
         .from('study_group_messages')
@@ -312,9 +312,9 @@ export const useStudyGroupDetail = (groupId: string) => {
     } catch (error) {
       log.error('Error fetching messages', error);
     }
-  };
+  }, [groupId]);
 
-  const fetchResources = async () => {
+  const fetchResources = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('study_group_resources')
@@ -330,7 +330,7 @@ export const useStudyGroupDetail = (groupId: string) => {
     } catch (error) {
       log.error('Error fetching resources', error);
     }
-  };
+  }, [groupId]);
 
   const sendMessage = async (content: string) => {
     if (!user || !isMember) return false;
@@ -417,14 +417,14 @@ export const useStudyGroupDetail = (groupId: string) => {
       setLoading(false);
     };
     loadData();
-  }, [groupId, user]);
+  }, [groupId, user, fetchGroup, fetchMembers]);
 
   useEffect(() => {
     if (isMember) {
       fetchMessages();
       fetchResources();
     }
-  }, [isMember]);
+  }, [isMember, fetchMessages, fetchResources]);
 
   return {
     group,

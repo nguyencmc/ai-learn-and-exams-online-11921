@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -70,14 +70,7 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [userRank, setUserRank] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (username) {
-      fetchProfile();
-      fetchLeaderboard();
-    }
-  }, [username]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       // Remove @ prefix if present
       const cleanUsername = username?.startsWith('@') ? username.slice(1) : username;
@@ -121,9 +114,9 @@ const UserProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [username]);
 
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .rpc('get_leaderboard', { limit_count: 50 });
@@ -140,7 +133,14 @@ const UserProfile = () => {
     } catch (error) {
       log.error('Error fetching leaderboard', error);
     }
-  };
+  }, [username]);
+
+  useEffect(() => {
+    if (username) {
+      fetchProfile();
+      fetchLeaderboard();
+    }
+  }, [username, fetchProfile, fetchLeaderboard]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

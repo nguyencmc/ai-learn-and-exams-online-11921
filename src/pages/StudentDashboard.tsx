@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissionsContext } from '@/contexts/PermissionsContext';
@@ -54,21 +54,12 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
 
-  useEffect(() => {
-    if (user) {
-      fetchData();
-      checkAchievements();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const checkAchievements = async () => {
+  const checkAchievements = useCallback(async () => {
     const progress = await getUserProgress();
     await checkAndAwardAchievements(progress);
-  };
+  }, [getUserProgress, checkAndAwardAchievements]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     
     // Fetch profile stats
@@ -146,7 +137,16 @@ const StudentDashboard = () => {
     setStreak(currentStreak);
 
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchData();
+      checkAchievements();
+    } else {
+      setLoading(false);
+    }
+  }, [user, fetchData, checkAchievements]);
 
   const accuracy = stats.totalQuestionsAnswered > 0 
     ? Math.round((stats.totalCorrectAnswers / stats.totalQuestionsAnswered) * 100) 
