@@ -36,7 +36,6 @@ export const ImagePopover: React.FC<ImagePopoverProps> = ({
   uploadDragOver,
   setUploadDragOver,
   handleUploadDrop,
-  handleUploadFileInputChange,
   uploadDimensions,
   uploadOriginalSize,
   onImageUpload,
