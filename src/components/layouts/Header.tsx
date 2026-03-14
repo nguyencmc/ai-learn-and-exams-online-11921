@@ -17,7 +17,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { MobileMenu } from "./MobileMenu";
-import { ThemeToggle } from "./theme/ThemeToggle";
+import { ThemeToggle } from "../theme/ThemeToggle";
 
 const navLinks = [
   { name: "Đề thi", href: "/exams" },
