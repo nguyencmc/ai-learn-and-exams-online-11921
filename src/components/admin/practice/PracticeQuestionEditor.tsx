@@ -27,6 +27,7 @@ import {
  } from 'lucide-react';
  import { SmartEditor } from '@/components/editor';
 import { useToast } from '@/hooks/useToast';
+import { stripHtml } from '@/lib/sanitize';
 
 export interface PracticeQuestion {
   id?: string;
@@ -157,9 +158,7 @@ export const PracticeQuestionEditor = ({
    }, [onImageUpload, index]);
  
    const getPreviewText = (html: string) => {
-     const tmp = document.createElement('div');
-     tmp.innerHTML = html;
-     return tmp.textContent || tmp.innerText || '';
+     return stripHtml(html);
    };
 
   const getDifficultyBadge = (diff: string) => {

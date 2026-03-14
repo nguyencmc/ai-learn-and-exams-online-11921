@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { stripHtml } from '@/lib/sanitize';
 import type { PracticeQuestion } from '../types';
 
 interface AIExplainButtonProps {
@@ -11,12 +12,6 @@ interface AIExplainButtonProps {
 }
 
 const EXPLAIN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explain-answer`;
-
-function stripHtml(html: string) {
-  const tmp = document.createElement('div');
-  tmp.innerHTML = html;
-  return tmp.textContent || tmp.innerText || '';
-}
 
 export function AIExplainButton({ question, userAnswer, className }: AIExplainButtonProps) {
   const [isOpen, setIsOpen] = useState(false);

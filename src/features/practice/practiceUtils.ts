@@ -4,11 +4,7 @@ const CHOICE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 export { CHOICE_LABELS };
 
-export function stripHtml(html: string): string {
-  const tmp = document.createElement('div');
-  tmp.innerHTML = html;
-  return tmp.textContent || tmp.innerText || '';
-}
+export { stripHtml } from '@/lib/sanitize';
 
 export function getChoices(q: PracticeQuestion): { id: string; text: string }[] {
   const raw = [q.option_a, q.option_b, q.option_c, q.option_d, q.option_e, q.option_f];

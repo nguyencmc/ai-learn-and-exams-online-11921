@@ -17,6 +17,7 @@
    Plus
  } from 'lucide-react';
  import { SmartEditor } from '@/components/editor';
+ import { stripHtml } from '@/lib/sanitize';
  
  export interface Question {
    id?: string;
@@ -96,9 +97,7 @@
  
    // Strip HTML tags for preview
    const getPreviewText = (html: string) => {
-     const tmp = document.createElement('div');
-     tmp.innerHTML = html;
-     return tmp.textContent || tmp.innerText || '';
+     return stripHtml(html);
    };
  
    return (

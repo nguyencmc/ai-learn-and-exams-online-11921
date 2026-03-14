@@ -13,3 +13,17 @@ export function sanitizeHtml(dirty: string): string {
     FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover"],
   });
 }
+
+/**
+ * Safely strip all HTML tags and return plain text.
+ * Sanitizes the input first to prevent XSS via innerHTML parsing.
+ */
+export function stripHtml(dirty: string): string {
+  const sanitized = DOMPurify.sanitize(dirty, {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+  });
+  const tmp = document.createElement("div");
+  tmp.innerHTML = sanitized;
+  return tmp.textContent || tmp.innerText || "";
+}
