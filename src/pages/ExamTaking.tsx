@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { AIExplanation } from '@/components/exam/AIExplanation';
 import { CameraPreview } from '@/components/exam/CameraPreview';
-import { useExamProctoring } from '@/hooks/useExamProctoring';
+import { useExamProctoring } from '@/features/exams/hooks/useExamProctoring';
 import { 
   Clock, 
   ChevronLeft, 

@@ -1,4 +1,4 @@
-import { PodcastBookmark } from "@/hooks/usePodcastBookmarks";
+import { PodcastBookmark } from "@/features/podcasts/hooks/usePodcastBookmarks";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bookmark, Trash2, Clock } from "lucide-react";

@@ -41,7 +41,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-import { useExams } from "@/hooks/useExams";
+import { useExams } from "@/features/exams/hooks/useExams";
 import { ExamFilters, ExamPagination } from "@/components/exam";
 import { ExamCard } from "@/components/exam/ExamCard";
 import { cn } from "@/lib/utils";

@@ -9,8 +9,8 @@ import { SyncedTranscript } from "@/components/podcast/SyncedTranscript";
 import { ABRepeatControl } from "@/components/podcast/ABRepeatControl";
 import { BookmarksList } from "@/components/podcast/BookmarksList";
 import { TranscriptFlashcardGenerator } from "@/components/podcast/TranscriptFlashcardGenerator";
-import { usePodcastProgress } from "@/hooks/usePodcastProgress";
-import { usePodcastBookmarks } from "@/hooks/usePodcastBookmarks";
+import { usePodcastProgress } from "@/features/podcasts/hooks/usePodcastProgress";
+import { usePodcastBookmarks } from "@/features/podcasts/hooks/usePodcastBookmarks";
 import { useMiniPlayer } from "@/contexts/MiniPlayerContext";
 import { useAuth } from "@/contexts/AuthContext";
 import {
