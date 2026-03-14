@@ -43,7 +43,7 @@ import {
 
 import { useExams } from "@/hooks/useExams";
 import { ExamFilters, ExamPagination } from "@/components/exam";
-import { ExamCard } from "@/components/ExamCard";
+import { ExamCard } from "@/components/exam/ExamCard";
 import { cn } from "@/lib/utils";
 
 const Exams = () => {
