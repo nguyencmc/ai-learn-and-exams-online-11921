@@ -90,7 +90,13 @@ export function ExamLeaderboardModal({
         } finally {
             setLoading(false);
         }
-    };
+    }, [examId]);
+
+    useEffect(() => {
+        if (open && examId) {
+            fetchLeaderboard();
+        }
+    }, [open, examId, fetchLeaderboard]);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);

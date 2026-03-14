@@ -111,7 +111,13 @@ export const CourseTestEditor = ({ lessonId, lessonTitle }: CourseTestEditorProp
     } finally {
       setLoading(false);
     }
-  };
+  }, [lessonId, lessonTitle]);
+
+  useEffect(() => {
+    if (open) {
+      fetchTestData();
+    }
+  }, [open, fetchTestData]);
 
   const addQuestion = () => {
     setQuestions(prev => [
