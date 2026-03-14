@@ -1,5 +1,6 @@
 export { useAdminData } from './hooks/useAdminData';
 export { useUserManagement } from './hooks/useUserManagement';
+export { useTeacherData } from './hooks/useTeacherData';
 export { AdminOverviewTab } from './components/AdminOverviewTab';
 export { AdminUsersTab } from './components/AdminUsersTab';
 export { AdminContentTab } from './components/AdminContentTab';
@@ -14,4 +15,9 @@ export { AuditLogStats } from './components/AuditLogStats';
 export { AuditLogTimeline } from './components/AuditLogTimeline';
 export { AuditLogTable } from './components/AuditLogTable';
 export { TimelineLogItem } from './components/TimelineLogItem';
-export type { Stats, DailyStats, ContentDistribution, UserWithRole, AdminTab, EnrichedUser, ImportResultItem, ViewMode, AuditLogStatsData, GroupedLogEntry, ActionConfigItem, EntityLabelItem, TimeFilterOption } from './types';
+export { TeacherOverviewTab } from './components/TeacherOverviewTab';
+export { TeacherCoursesTab } from './components/TeacherCoursesTab';
+export { TeacherExamsTab } from './components/TeacherExamsTab';
+export { TeacherContentTab } from './components/TeacherContentTab';
+export { TeacherAnalyticsTab } from './components/TeacherAnalyticsTab';
+export type { Stats, DailyStats, ContentDistribution, UserWithRole, AdminTab, EnrichedUser, ImportResultItem, ViewMode, AuditLogStatsData, GroupedLogEntry, ActionConfigItem, EntityLabelItem, TimeFilterOption, TeacherStats, RecentItem, CourseWithStats, DashboardTab } from './types';

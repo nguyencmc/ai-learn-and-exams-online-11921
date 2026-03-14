@@ -93,3 +93,35 @@ export interface TimeFilterOption {
   value: string;
   label: string;
 }
+
+// Teacher Dashboard types
+export interface TeacherStats {
+  totalExams: number;
+  totalQuestions: number;
+  totalFlashcardSets: number;
+  totalPodcasts: number;
+  totalCourses: number;
+  totalStudents: number;
+  totalClasses: number;
+  avgRating: number;
+}
+
+export interface RecentItem {
+  id: string;
+  title: string;
+  type: 'exam' | 'course' | 'flashcard' | 'podcast' | 'class';
+  created_at: string;
+  stats?: string;
+}
+
+export interface CourseWithStats {
+  id: string;
+  title: string;
+  image_url: string | null;
+  student_count: number;
+  rating: number | null;
+  is_published: boolean;
+  created_at: string;
+}
+
+export type DashboardTab = 'overview' | 'courses' | 'exams' | 'content' | 'analytics';
