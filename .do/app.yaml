@@ -1,0 +1,22 @@
+name: ai-exam-cloud
+region: sgp
+
+services:
+  - name: web
+    dockerfile_path: Dockerfile
+    github:
+      repo: nguyencmc/ai-learn-and-exams-online-11921
+      branch: main
+      deploy_on_push: true
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /
+    envs:
+      - key: VITE_SUPABASE_URL
+        scope: BUILD_TIME
+        type: SECRET
+      - key: VITE_SUPABASE_ANON_KEY
+        scope: BUILD_TIME
+        type: SECRET
