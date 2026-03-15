@@ -1,3 +1,14 @@
+# DigitalOcean App Platform Specification
+# ========================================
+# To deploy:
+#   1. Go to https://cloud.digitalocean.com/apps → Create App
+#   2. Choose "Import from GitHub" and select this repository
+#   3. DO will auto-detect this .do/app.yaml
+#   4. IMPORTANT: Add the following BUILD_TIME secrets in the App Settings:
+#      - VITE_SUPABASE_URL (your Supabase project URL)
+#      - VITE_SUPABASE_ANON_KEY (your Supabase anon/publishable key)
+#   5. Deploy!
+
 name: ai-exam-cloud
 region: sgp
 
@@ -13,8 +24,10 @@ services:
     instance_size_slug: basic-xxs
     health_check:
       http_path: /healthz
-      initial_delay_seconds: 10
+      initial_delay_seconds: 15
       period_seconds: 30
+      timeout_seconds: 5
+      failure_threshold: 3
     routes:
       - path: /
     envs:
