@@ -23,25 +23,64 @@ export type Env = z.infer<typeof envSchema>;
  * This prevents a blank white page and helps developers diagnose the issue.
  */
 function showEnvError(formatted: string): void {
-  const root = document.getElementById("root");
-  if (root) {
+  const root = document.getElementById("root") ?? document.body;
+
+  // Clear any existing content
+  if (root.id === "root") {
     root.innerHTML = "";
-    const container = document.createElement("div");
-    container.style.cssText =
-      "max-width:600px;margin:80px auto;padding:32px;font-family:system-ui,sans-serif;color:#1a1a1a;background:#fff3f3;border:2px solid #dc2626;border-radius:12px;";
-    container.innerHTML = `
-      <h1 style="margin:0 0 16px;color:#dc2626;">⚠️ Configuration Error</h1>
-      <p style="margin:0 0 12px;">Required environment variables are missing or invalid:</p>
-      <pre style="background:#fef2f2;padding:16px;border-radius:8px;overflow-x:auto;font-size:14px;white-space:pre-wrap;">${formatted}</pre>
-      <h3 style="margin:24px 0 8px;">How to fix:</h3>
-      <ul style="padding-left:20px;line-height:1.8;">
-        <li><strong>Local development:</strong> Copy <code>.env.example</code> to <code>.env</code> and fill in your Supabase credentials.</li>
-        <li><strong>DigitalOcean:</strong> Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> as <em>BUILD_TIME</em> secrets in the App Platform dashboard, then redeploy.</li>
-        <li><strong>Docker:</strong> Pass <code>--build-arg VITE_SUPABASE_URL=... --build-arg VITE_SUPABASE_ANON_KEY=...</code> when building.</li>
-      </ul>
-    `;
-    root.appendChild(container);
   }
+
+  const container = document.createElement("div");
+  Object.assign(container.style, {
+    maxWidth: "600px",
+    margin: "80px auto",
+    padding: "32px",
+    fontFamily: "system-ui, sans-serif",
+    color: "#1a1a1a",
+    background: "#fff3f3",
+    border: "2px solid #dc2626",
+    borderRadius: "12px",
+  });
+
+  const heading = document.createElement("h1");
+  Object.assign(heading.style, { margin: "0 0 16px", color: "#dc2626" });
+  heading.textContent = "⚠️ Configuration Error";
+
+  const desc = document.createElement("p");
+  desc.style.margin = "0 0 12px";
+  desc.textContent =
+    "Required environment variables are missing or invalid:";
+
+  const pre = document.createElement("pre");
+  Object.assign(pre.style, {
+    background: "#fef2f2",
+    padding: "16px",
+    borderRadius: "8px",
+    overflowX: "auto",
+    fontSize: "14px",
+    whiteSpace: "pre-wrap",
+  });
+  pre.textContent = formatted;
+
+  const howToFix = document.createElement("h3");
+  howToFix.style.margin = "24px 0 8px";
+  howToFix.textContent = "How to fix:";
+
+  const list = document.createElement("ul");
+  Object.assign(list.style, { paddingLeft: "20px", lineHeight: "1.8" });
+  const steps = [
+    "Local development: Copy .env.example to .env and fill in your Supabase credentials.",
+    "DigitalOcean: Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY as BUILD_TIME secrets in the App Platform dashboard, then redeploy.",
+    "Docker: Pass --build-arg VITE_SUPABASE_URL=... --build-arg VITE_SUPABASE_ANON_KEY=... when building.",
+  ];
+  for (const step of steps) {
+    const li = document.createElement("li");
+    li.textContent = step;
+    list.appendChild(li);
+  }
+
+  container.append(heading, desc, pre, howToFix, list);
+  root.appendChild(container);
 }
 
 function getEnv(): Env {
