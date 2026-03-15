@@ -11,6 +11,10 @@ services:
     http_port: 8080
     instance_count: 1
     instance_size_slug: basic-xxs
+    health_check:
+      http_path: /healthz
+      initial_delay_seconds: 10
+      period_seconds: 30
     routes:
       - path: /
     envs:
