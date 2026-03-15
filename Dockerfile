@@ -16,8 +16,10 @@ ARG VITE_SUPABASE_ANON_KEY
 ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
 ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
-# Build the application
-RUN npm run build
+# Build with Vite only (skip tsc --noEmit to avoid OOM on constrained build machines).
+# TypeScript type-checking should be done in CI, not during Docker image build.
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+RUN npx vite build
 
 # Stage 2: Serve with nginx
 FROM nginx:stable-alpine
