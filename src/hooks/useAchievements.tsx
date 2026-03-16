@@ -38,14 +38,14 @@ export const useAchievements = () => {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchAchievements = async () => {
+  const fetchAchievements = useCallback(async () => {
     const { data } = await supabase
       .from('achievements')
       .select('*')
       .order('display_order', { ascending: true });
     
     setAchievements(data || []);
-  };
+  }, []);
 
   const fetchUserAchievements = useCallback(async () => {
     if (!user) return;
@@ -58,7 +58,7 @@ export const useAchievements = () => {
     setUserAchievements(data || []);
   }, [user]);
 
-  const checkAndAwardAchievements = async (progress: UserProgress) => {
+  const checkAndAwardAchievements = useCallback(async (progress: UserProgress) => {
     if (!user) return;
 
     const unearned = achievements.filter(
@@ -116,9 +116,9 @@ export const useAchievements = () => {
     }
 
     return newlyEarned;
-  };
+  }, [user, achievements, userAchievements, fetchUserAchievements, toast]);
 
-  const getUserProgress = async (): Promise<UserProgress> => {
+  const getUserProgress = useCallback(async (): Promise<UserProgress> => {
     if (!user) {
       return {
         exams_completed: 0,
@@ -186,7 +186,7 @@ export const useAchievements = () => {
       points_earned: profile?.points || 0,
       flashcards_mastered: flashcardsMastered || 0,
     };
-  };
+  }, [user]);
 
   useEffect(() => {
     const init = async () => {
@@ -197,7 +197,7 @@ export const useAchievements = () => {
     };
 
     init();
-  }, [user, fetchUserAchievements]);
+  }, [user, fetchAchievements, fetchUserAchievements]);
 
   const earnedAchievementIds = new Set(userAchievements.map(ua => ua.achievement_id));
   
