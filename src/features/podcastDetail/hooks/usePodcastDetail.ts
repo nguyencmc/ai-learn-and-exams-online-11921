@@ -46,7 +46,7 @@ export const usePodcastDetail = () => {
     },
   });
 
-  // Hooks for progress and bookmarks
+  // Progress hook is used for its side effects (auto-save on time change)
   const { saveProgress: _saveProgress } = usePodcastProgress({
     podcastId: podcast?.id || "",
     currentTime,
