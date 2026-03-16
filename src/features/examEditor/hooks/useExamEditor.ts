@@ -16,7 +16,6 @@ export function useExamEditor(): ExamEditorState & ExamEditorActions {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [currentStep, setCurrentStep] = useState(1);
   const [categories, setCategories] = useState<ExamCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -106,7 +105,6 @@ export function useExamEditor(): ExamEditorState & ExamEditorActions {
         description: "Vui lòng nhập tiêu đề và slug",
         variant: "destructive",
       });
-      setCurrentStep(1);
       return;
     }
 
@@ -116,7 +114,6 @@ export function useExamEditor(): ExamEditorState & ExamEditorActions {
         description: "Vui lòng thêm ít nhất 1 câu hỏi",
         variant: "destructive",
       });
-      setCurrentStep(2);
       return;
     }
 
@@ -216,36 +213,6 @@ export function useExamEditor(): ExamEditorState & ExamEditorActions {
     }
   };
 
-  const handleNext = () => {
-    if (currentStep === 1 && (!title.trim() || !slug.trim())) {
-      toast({
-        title: "Thiếu thông tin",
-        description: "Vui lòng nhập tiêu đề và slug trước khi tiếp tục",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const getCategoryName = () => {
-    return categories.find(c => c.id === categoryId)?.name;
-  };
-
-  const handleStepClick = (step: number) => {
-    if (step < currentStep || (step === 2 && title && slug) || step === currentStep) {
-      setCurrentStep(step);
-    }
-  };
-
   const handleThumbnailUpload = async (file: File): Promise<string> => {
     const now = new Date();
     const year = now.getFullYear();
@@ -307,7 +274,6 @@ export function useExamEditor(): ExamEditorState & ExamEditorActions {
 
   return {
     // State
-    currentStep,
     categories,
     loading,
     saving,
@@ -324,7 +290,6 @@ export function useExamEditor(): ExamEditorState & ExamEditorActions {
     questions,
 
     // Actions
-    setCurrentStep,
     setTitle,
     setSlug,
     setDescription,
@@ -332,13 +297,9 @@ export function useExamEditor(): ExamEditorState & ExamEditorActions {
     setDifficulty,
     setDurationMinutes,
     setQuestions,
-    handleNext,
-    handleBack,
     handleSave,
     handleThumbnailUpload,
     handleThumbnailRemove,
     handleImageUpload,
-    getCategoryName,
-    handleStepClick,
   };
 }

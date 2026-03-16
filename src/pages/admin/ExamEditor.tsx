@@ -1,7 +1,5 @@
-import { StepIndicator } from '@/components/admin/exam/StepIndicator';
 import {
   useExamEditor,
-  EXAM_STEPS,
   ExamEditorHeader,
   ExamEditorStepContent,
   ExamEditorNavigation,
@@ -34,16 +32,7 @@ const ExamEditor = () => {
           title={editor.title}
         />
 
-        <div className="mb-8 max-w-3xl mx-auto">
-          <StepIndicator
-            steps={EXAM_STEPS}
-            currentStep={editor.currentStep}
-            onStepClick={editor.handleStepClick}
-          />
-        </div>
-
         <ExamEditorStepContent
-          currentStep={editor.currentStep}
           title={editor.title}
           slug={editor.slug}
           description={editor.description}
@@ -61,18 +50,13 @@ const ExamEditor = () => {
           setDifficulty={editor.setDifficulty}
           setDurationMinutes={editor.setDurationMinutes}
           setQuestions={editor.setQuestions}
-          setCurrentStep={editor.setCurrentStep}
           handleThumbnailUpload={editor.handleThumbnailUpload}
           handleThumbnailRemove={editor.handleThumbnailRemove}
           handleImageUpload={editor.handleImageUpload}
-          getCategoryName={editor.getCategoryName}
         />
 
         <ExamEditorNavigation
-          currentStep={editor.currentStep}
           saving={editor.saving}
-          onNext={editor.handleNext}
-          onBack={editor.handleBack}
           onSave={editor.handleSave}
         />
       </main>
