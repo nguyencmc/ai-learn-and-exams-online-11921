@@ -30,7 +30,7 @@ export function ExamCtaCard({ exam, totalQ, totalAttempts, bestScore, onStart }:
         </Button>
         {totalAttempts > 0 && (
           <p className="text-xs text-muted-foreground">
-            Bạn đã thi <strong>{totalAttempts}</strong> lần · Cao nhất: <strong className={bestScore! >= 70 ? "text-emerald-500" : "text-rose-500"}>{bestScore}%</strong>
+            Bạn đã thi <strong>{totalAttempts}</strong> lần · Cao nhất: <strong className={(bestScore ?? 0) >= 70 ? "text-emerald-500" : "text-rose-500"}>{bestScore}%</strong>
           </p>
         )}
       </CardContent>
