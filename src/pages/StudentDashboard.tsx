@@ -142,11 +142,16 @@ const StudentDashboard = () => {
   useEffect(() => {
     if (user) {
       fetchData();
-      checkAchievements();
     } else {
       setLoading(false);
     }
-  }, [user, fetchData, checkAchievements]);
+  }, [user, fetchData]);
+
+  useEffect(() => {
+    if (user) {
+      checkAchievements();
+    }
+  }, [user, checkAchievements]);
 
   const accuracy = stats.totalQuestionsAnswered > 0 
     ? Math.round((stats.totalCorrectAnswers / stats.totalQuestionsAnswered) * 100) 
