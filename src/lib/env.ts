@@ -14,6 +14,7 @@ const envSchema = z.object({
   VITE_SUPABASE_ANON_KEY: z
     .string({ required_error: "VITE_SUPABASE_ANON_KEY is required" })
     .min(1, "VITE_SUPABASE_ANON_KEY must not be empty"),
+  VITE_ERROR_LOG_ENDPOINT: z.string().url("VITE_ERROR_LOG_ENDPOINT must be a valid URL").optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

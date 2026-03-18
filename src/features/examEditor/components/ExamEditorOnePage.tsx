@@ -98,7 +98,7 @@ function ExamInfoPanel({
         <Label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Ảnh bìa</Label>
         {thumbnailUrl ? (
           <div className="relative group rounded-xl overflow-hidden border border-border/50">
-            <img src={thumbnailUrl} alt="Cover" className="w-full h-28 object-cover" />
+            <img src={thumbnailUrl} alt="Ảnh bìa đề thi" className="w-full h-28 object-cover" />
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <Button variant="destructive" size="sm" onClick={onThumbnailRemove} className="gap-1 text-xs h-7 px-3">
                 <X className="w-3 h-3" /> Xóa ảnh

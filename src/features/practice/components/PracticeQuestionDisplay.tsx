@@ -82,7 +82,7 @@ export function PracticeQuestionDisplay({
             <div className="mb-4 flex justify-center">
               <img
                 src={question.question_image}
-                alt="Question"
+                alt={`Hình minh họa cho câu hỏi ${questionIndex + 1}`}
                 className="max-w-full max-h-52 sm:max-h-64 rounded-lg object-contain cursor-zoom-in hover:opacity-90 transition-opacity"
                 onClick={() => onClickImage(question.question_image!)}
               />

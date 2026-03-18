@@ -174,7 +174,7 @@ export const MiniPlayer = () => {
 
             {/* Volume */}
             <div className="hidden md:flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={toggleMute} className="h-8 w-8">
+              <Button variant="ghost" size="icon" onClick={toggleMute} className="h-8 w-8" aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}>
                 {isMuted || volume === 0 ? (
                   <VolumeX className="w-4 h-4" />
                 ) : (
@@ -196,6 +196,7 @@ export const MiniPlayer = () => {
               size="icon"
               onClick={() => setExpanded(!expanded)}
               className="h-8 w-8"
+              aria-label={expanded ? 'Thu gọn trình phát' : 'Mở rộng trình phát'}
             >
               <ChevronUp className={cn("w-4 h-4 transition-transform", expanded && "rotate-180")} />
             </Button>
@@ -206,6 +207,7 @@ export const MiniPlayer = () => {
               size="icon"
               onClick={closeMiniPlayer}
               className="h-8 w-8"
+              aria-label="Đóng trình phát mini"
             >
               <X className="w-4 h-4" />
             </Button>

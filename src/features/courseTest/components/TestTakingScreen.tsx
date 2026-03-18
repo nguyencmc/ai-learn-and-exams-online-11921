@@ -104,7 +104,7 @@ export const TestTakingScreen = ({
           {currentQuestion.question_image && (
             <img
               src={currentQuestion.question_image}
-              alt="Question"
+              alt={`Hình minh họa câu hỏi ${currentQuestionIndex + 1}`}
               className="mt-4 max-w-full rounded-lg"
             />
           )}

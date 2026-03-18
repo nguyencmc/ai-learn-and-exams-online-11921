@@ -67,7 +67,7 @@ const CoursesTab = ({ classId, isManager }: CoursesTabProps) => {
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
                             {course.image_url ? (
-                              <img src={course.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                              <img src={course.image_url} alt={`Ảnh khóa học ${course.title}`} className="w-full h-full object-cover rounded-lg" />
                             ) : (
                               <BookOpen className="h-5 w-5 text-muted-foreground" />
                             )}
@@ -122,6 +122,7 @@ const CoursesTab = ({ classId, isManager }: CoursesTabProps) => {
                     size="icon"
                     className="absolute top-2 right-2"
                     onClick={() => handleRemove(cc.course_id)}
+                    aria-label={`Gỡ khóa học ${cc.course?.title || 'này'} khỏi lớp`}
                   >
                     <X className="h-4 w-4" />
                   </Button>

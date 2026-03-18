@@ -137,7 +137,7 @@ export function PodcastMediaContent({
               {uploadingThumbnail ? (
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
               ) : thumbnailUrl ? (
-                <img src={thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                <img src={thumbnailUrl} alt="Ảnh thumbnail podcast xem trước" className="w-full h-full object-cover" />
               ) : (
                 <div className="text-center">
                   <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground" />

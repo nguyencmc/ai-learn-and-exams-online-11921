@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback} from 'react';
+import { memo, useState, useEffect, useCallback} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-export function MyPracticeSetsWidget() {
+export const MyPracticeSetsWidget = memo(function MyPracticeSetsWidget() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [totalSets, setTotalSets] = useState(0);
@@ -118,4 +118,6 @@ export function MyPracticeSetsWidget() {
       </Card>
     </Link>
   );
-}
+});
+
+MyPracticeSetsWidget.displayName = 'MyPracticeSetsWidget';

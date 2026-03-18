@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback} from 'react';
+import { memo, useState, useEffect, useCallback} from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';import { 
+import { supabase } from '@/integrations/supabase/client';
+import {
   Flame, 
   Bell,
   ChevronRight,
@@ -23,7 +24,7 @@ interface DashboardSuggestionsProps {
   levelProgress: number;
 }
 
-export function DashboardSuggestions({
+export const DashboardSuggestions = memo(function DashboardSuggestions({
   streak,
   level,
   points,
@@ -158,4 +159,6 @@ export function DashboardSuggestions({
 
     </aside>
   );
-}
+});
+
+DashboardSuggestions.displayName = 'DashboardSuggestions';

@@ -100,17 +100,22 @@ const Exams = () => {
         {/* Mobile Header */}
         <header className="lg:hidden sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <div className="flex items-center justify-between px-4 h-14">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Quay lại trang trước">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="font-bold text-lg text-foreground">Thư viện đề thi</h1>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => setMobileSearchOpen(!mobileSearchOpen)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+                aria-label={mobileSearchOpen ? 'Đóng tìm kiếm' : 'Mở tìm kiếm'}
+              >
                 <Search className="h-5 w-5" />
               </Button>
               <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
+                  <Button variant="ghost" size="icon" className="relative" aria-label="Mở bộ lọc đề thi">
                     <SlidersHorizontal className="h-5 w-5" />
                     {hasActiveFilters && (
                       <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
@@ -180,7 +185,13 @@ const Exams = () => {
                     className="pl-12 pr-4 h-14 text-base rounded-2xl border-2"
                   />
                   {searchQuery && (
-                    <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2" onClick={() => setSearchQuery("")}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2"
+                      onClick={() => setSearchQuery("")}
+                      aria-label="Xóa từ khóa tìm kiếm"
+                    >
                       <X className="h-4 w-4" />
                     </Button>
                   )}

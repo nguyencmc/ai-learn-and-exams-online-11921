@@ -132,7 +132,7 @@ export const ExamInfoStep = ({
               <div className="relative group rounded-xl overflow-hidden border border-border">
                 <img
                   src={thumbnailUrl}
-                  alt="Thumbnail"
+                  alt="Ảnh bìa đề thi"
                   className="w-full h-48 object-cover"
                 />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

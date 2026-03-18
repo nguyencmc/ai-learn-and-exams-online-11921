@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { 
   Target, 
   Layers, 
@@ -49,7 +50,7 @@ interface DashboardSidebarProps {
   onSectionChange: (section: DashboardSection) => void;
 }
 
-export function DashboardSidebar({ activeSection, onSectionChange }: DashboardSidebarProps) {
+export const DashboardSidebar = memo(function DashboardSidebar({ activeSection, onSectionChange }: DashboardSidebarProps) {
   return (
     <aside className="space-y-6">
       {/* Main Navigation */}
@@ -104,4 +105,6 @@ export function DashboardSidebar({ activeSection, onSectionChange }: DashboardSi
       </div>
     </aside>
   );
-}
+});
+
+DashboardSidebar.displayName = 'DashboardSidebar';

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { AIQuestionGenerator } from '@/components/ai/AIQuestionGenerator';
 import { ImportExportQuestions } from '@/components/admin/ImportExportQuestions';
+import type { Question as ImportExportQuestion } from '@/components/admin/importExport';
 import { PracticeQuestionEditor } from '@/components/admin/practice/PracticeQuestionEditor';
 import type { PracticeQuestion } from '@/components/admin/practice/PracticeQuestionEditor';
 import { SmartEditor } from '@/components/editor';
@@ -200,15 +201,38 @@ function QuestionEditorPanel({
     onSelectIndex(questions.length);
   };
 
-  const handleImport = (imported: PracticeQuestion[]) => {
+  const handleImport = (imported: ImportExportQuestion[]) => {
     const mapped: PracticeQuestion[] = imported.map((q, i) => ({
-      ...q, isNew: true, difficulty: 'medium', tags: [],
+      ...q,
+      option_e: q.option_e || '',
+      option_f: q.option_f || '',
+      option_g: q.option_g || '',
+      option_h: q.option_h || '',
+      isNew: true,
+      difficulty: 'medium',
+      tags: [],
       question_order: questions.length + i + 1,
     }));
     onQuestionsChange(prev => [...prev, ...mapped]);
     setTab('manual');
     onSelectIndex(questions.length > 0 ? questions.length : 0);
   };
+
+  const importableQuestions: ImportExportQuestion[] = questions.map((q, i) => ({
+    id: q.id,
+    question_text: q.question_text,
+    option_a: q.option_a,
+    option_b: q.option_b,
+    option_c: q.option_c,
+    option_d: q.option_d,
+    option_e: q.option_e || '',
+    option_f: q.option_f || '',
+    option_g: q.option_g || '',
+    option_h: q.option_h || '',
+    correct_answer: q.correct_answer,
+    explanation: q.explanation,
+    question_order: q.question_order || i + 1,
+  }));
 
   const currentQ = questions[activeIndex];
   const activeQuestions = questions.filter(q => !q.isDeleted);
@@ -319,7 +343,7 @@ function QuestionEditorPanel({
               </div>
             ))}
           </div>
-          <ImportExportQuestions questions={questions as any} onImport={handleImport as any} />
+          <ImportExportQuestions questions={importableQuestions} onImport={handleImport} />
         </div>
       </TabsContent>
     </Tabs>

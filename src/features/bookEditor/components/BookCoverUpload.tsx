@@ -51,7 +51,7 @@ export function BookCoverUpload({
             {uploadingCover ? (
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             ) : coverUrl ? (
-              <img src={coverUrl} alt="Cover" className="w-full h-full object-cover" />
+              <img src={coverUrl} alt="Ảnh bìa sách xem trước" className="w-full h-full object-cover" />
             ) : (
               <div className="text-center">
                 <ImageIcon className="w-10 h-10 mx-auto text-muted-foreground" />

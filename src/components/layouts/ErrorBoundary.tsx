@@ -1,5 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { logger } from '@/lib/logger';
+import { captureException } from '@/lib/observability';
 
 const log = logger('ErrorBoundary');
 
@@ -11,6 +12,7 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  errorId: string | null;
 }
 
 /**
@@ -20,19 +22,25 @@ interface ErrorBoundaryState {
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorId: null };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+    const errorId = `ERR-${Date.now().toString(36).toUpperCase()}`;
+    return { hasError: true, error, errorId };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     log.error('ErrorBoundary caught an error', { error, errorInfo });
+    captureException(error, {
+      source: 'ErrorBoundary',
+      tags: { area: 'ui' },
+      extra: { componentStack: errorInfo.componentStack },
+    });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorId: null });
   };
 
   render() {
@@ -66,8 +74,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               Đã xảy ra lỗi
             </h1>
             <p className="text-muted-foreground">
-              Ứng dụng gặp sự cố không mong muốn. Vui lòng thử tải lại trang.
+              Ứng dụng gặp sự cố không mong muốn. Vui lòng thử lại hoặc quay về trang chủ.
             </p>
+            {this.state.errorId && (
+              <p className="text-xs text-muted-foreground">Mã lỗi tham chiếu: {this.state.errorId}</p>
+            )}
             {this.state.error && (
               <details className="text-left text-sm text-muted-foreground bg-muted rounded-lg p-3">
                 <summary className="cursor-pointer font-medium">Chi tiết lỗi</summary>

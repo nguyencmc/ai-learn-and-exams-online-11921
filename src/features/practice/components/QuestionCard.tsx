@@ -138,7 +138,7 @@ export function QuestionCard({
           <div className="flex justify-center">
             <img 
               src={question.question_image} 
-              alt="Question" 
+              alt={`Hình minh họa cho câu ${question.order || question.id}`} 
               className="max-w-full max-h-64 rounded-lg object-contain"
             />
           </div>

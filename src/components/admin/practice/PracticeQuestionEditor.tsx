@@ -39,6 +39,8 @@ export interface PracticeQuestion {
   option_d: string;
   option_e?: string;
   option_f?: string;
+  option_g?: string;
+  option_h?: string;
   correct_answer: string;
   explanation: string;
   difficulty: string;
@@ -248,7 +250,7 @@ export const PracticeQuestionEditor = ({
                 <div className="relative inline-block">
                   <img 
                     src={question.question_image} 
-                    alt="Question" 
+                    alt={`Hình minh họa câu hỏi ${index + 1}`} 
                     className="max-h-32 rounded-lg border"
                   />
                   <Button
@@ -256,6 +258,7 @@ export const PracticeQuestionEditor = ({
                     size="icon"
                     className="absolute -top-2 -right-2 h-6 w-6"
                     onClick={() => removeImage('question_image')}
+                    aria-label={`Xóa ảnh của câu hỏi ${index + 1}`}
                   >
                     <X className="w-3 h-3" />
                   </Button>

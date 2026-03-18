@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { Suspense, lazy, useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissionsContext } from '@/contexts/PermissionsContext';
@@ -13,13 +13,28 @@ import { useAchievements } from '@/hooks/useAchievements';
 import { DashboardSidebar, DashboardSection } from '@/components/dashboard/DashboardSidebar';
 import { MobileBottomNav } from '@/components/dashboard/MobileBottomNav';
 import { DashboardSuggestions } from '@/components/dashboard/DashboardSuggestions';
-import { OverviewSection } from '@/components/dashboard/sections/overviewSection';
-import { MyCoursesSection } from '@/components/dashboard/sections/myCoursesSection';
-import { MyClassesSection } from '@/components/dashboard/sections/MyClassesSection';
-import { FlashcardsSection } from '@/components/dashboard/sections/FlashcardsSection';
-import { HistorySection } from '@/components/dashboard/sections/HistorySection';
-import { AchievementsSection } from '@/components/dashboard/sections/AchievementsSection';
-import { SettingsSection } from '@/components/dashboard/sections/SettingsSection';
+
+const OverviewSection = lazy(() =>
+  import('@/components/dashboard/sections/overviewSection').then((m) => ({ default: m.OverviewSection }))
+);
+const MyCoursesSection = lazy(() =>
+  import('@/components/dashboard/sections/myCoursesSection').then((m) => ({ default: m.MyCoursesSection }))
+);
+const MyClassesSection = lazy(() =>
+  import('@/components/dashboard/sections/MyClassesSection').then((m) => ({ default: m.MyClassesSection }))
+);
+const FlashcardsSection = lazy(() =>
+  import('@/components/dashboard/sections/FlashcardsSection').then((m) => ({ default: m.FlashcardsSection }))
+);
+const HistorySection = lazy(() =>
+  import('@/components/dashboard/sections/HistorySection').then((m) => ({ default: m.HistorySection }))
+);
+const AchievementsSection = lazy(() =>
+  import('@/components/dashboard/sections/AchievementsSection').then((m) => ({ default: m.AchievementsSection }))
+);
+const SettingsSection = lazy(() =>
+  import('@/components/dashboard/sections/SettingsSection').then((m) => ({ default: m.SettingsSection }))
+);
 
 interface Stats {
   totalExamsTaken: number;
@@ -153,12 +168,48 @@ const StudentDashboard = () => {
     }
   }, [user, checkAchievements]);
 
-  const accuracy = stats.totalQuestionsAnswered > 0 
-    ? Math.round((stats.totalCorrectAnswers / stats.totalQuestionsAnswered) * 100) 
-    : 0;
+  const accuracy = useMemo(() => (
+    stats.totalQuestionsAnswered > 0
+      ? Math.round((stats.totalCorrectAnswers / stats.totalQuestionsAnswered) * 100)
+      : 0
+  ), [stats.totalCorrectAnswers, stats.totalQuestionsAnswered]);
 
-  const pointsToNextLevel = (stats.level * 100) - (stats.points % 100);
-  const levelProgress = ((stats.points % 100) / 100) * 100;
+  const pointsToNextLevel = useMemo(() => (stats.level * 100) - (stats.points % 100), [stats.level, stats.points]);
+  const levelProgress = useMemo(() => ((stats.points % 100) / 100) * 100, [stats.points]);
+
+  // Render current section content
+  const renderedSectionContent = useMemo(() => {
+    switch (activeSection) {
+      case 'overview':
+        return (
+          <OverviewSection
+            stats={stats}
+            weeklyProgress={weeklyProgress}
+            levelProgress={levelProgress}
+            pointsToNextLevel={pointsToNextLevel}
+            accuracy={accuracy}
+          />
+        );
+      case 'my-courses':
+        return <MyCoursesSection />;
+      case 'my-classes':
+        return <MyClassesSection />;
+      case 'flashcards':
+        return <FlashcardsSection />;
+      case 'history':
+        return <HistorySection />;
+      case 'achievements':
+        return <AchievementsSection />;
+      case 'settings':
+        return <SettingsSection />;
+      default:
+        return null;
+    }
+  }, [activeSection, stats, weeklyProgress, levelProgress, pointsToNextLevel, accuracy]);
+
+  const handleSectionChange = useCallback((section: DashboardSection) => {
+    setActiveSection(section);
+  }, []);
 
   // Not logged in
   if (!user) {
@@ -186,36 +237,6 @@ const StudentDashboard = () => {
       </div>
     );
   }
-
-  // Render current section content
-  const renderSectionContent = () => {
-    switch (activeSection) {
-      case 'overview':
-        return (
-          <OverviewSection
-            stats={stats}
-            weeklyProgress={weeklyProgress}
-            levelProgress={levelProgress}
-            pointsToNextLevel={pointsToNextLevel}
-            accuracy={accuracy}
-          />
-        );
-      case 'my-courses':
-        return <MyCoursesSection />;
-      case 'my-classes':
-        return <MyClassesSection />;
-      case 'flashcards':
-        return <FlashcardsSection />;
-      case 'history':
-        return <HistorySection />;
-      case 'achievements':
-        return <AchievementsSection />;
-      case 'settings':
-        return <SettingsSection />;
-      default:
-        return null;
-    }
-  };
 
   return (
     <>
@@ -250,7 +271,7 @@ const StudentDashboard = () => {
             <div className="sticky top-24">
               <DashboardSidebar 
                 activeSection={activeSection} 
-                onSectionChange={setActiveSection} 
+                onSectionChange={handleSectionChange}
               />
             </div>
           </div>
@@ -258,7 +279,9 @@ const StudentDashboard = () => {
           {/* Middle Column - Main Content (6/12 = 50%) */}
           <div className="lg:col-span-6 pb-24 lg:pb-0">
             {/* Section Content */}
-            {renderSectionContent()}
+            <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/30" />}>
+              {renderedSectionContent}
+            </Suspense>
           </div>
 
           {/* Right Column - Suggestions (4/12 = ~33.3%) */}
@@ -278,7 +301,7 @@ const StudentDashboard = () => {
       
       <MobileBottomNav 
         activeSection={activeSection} 
-        onSectionChange={setActiveSection} 
+        onSectionChange={handleSectionChange}
       />
       <AITutorButton />
     </>

@@ -15,6 +15,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
+    "a11y": "node scripts/a11y-audit.cjs",
+    "bundle:report": "npm run build && node -e \"const fs=require('fs');const p='dist/bundle-stats.json';if(!fs.existsSync(p)){throw new Error('bundle-stats.json not found')}const s=JSON.parse(fs.readFileSync(p,'utf8'));console.log(s.slice(0,15));\"",
     "clean": "rm -rf dist node_modules/.vite"
   },
   "dependencies": {

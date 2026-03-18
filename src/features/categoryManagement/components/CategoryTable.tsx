@@ -122,7 +122,7 @@ export function CategoryTable({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {category.icon_url && (
-                        <img src={category.icon_url} alt="" className="w-6 h-6 rounded" />
+                        <img src={category.icon_url} alt={`Biểu tượng danh mục ${category.name}`} className="w-6 h-6 rounded" />
                       )}
                       <span className="font-medium">{category.name}</span>
                     </div>
@@ -149,12 +149,13 @@ export function CategoryTable({
                         variant="ghost"
                         size="icon"
                         onClick={() => onEditClick(category)}
+                        aria-label={`Chỉnh sửa danh mục ${category.name}`}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive">
+                          <Button variant="ghost" size="icon" className="text-destructive" aria-label={`Xóa danh mục ${category.name}`}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </AlertDialogTrigger>

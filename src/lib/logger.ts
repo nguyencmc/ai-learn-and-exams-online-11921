@@ -1,3 +1,5 @@
+import { captureException, captureMessage } from "@/lib/observability";
+
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LogEntry {
@@ -39,6 +41,21 @@ function createEntry(
 
 function log(level: LogLevel, message: string, context?: string, data?: unknown): void {
   const entry = createEntry(level, message, context, data);
+
+  if (level === "error") {
+    const errorPayload = data instanceof Error ? data : new Error(message);
+    captureException(errorPayload, {
+      source: context,
+      extra: { data },
+    });
+  }
+
+  if (level === "warn") {
+    captureMessage(message, "warning", {
+      source: context,
+      extra: { data },
+    });
+  }
 
   if (!isDev) {
     // In production, only surface errors and warnings to console.

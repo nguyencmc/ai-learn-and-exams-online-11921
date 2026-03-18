@@ -30,7 +30,7 @@ export const ReviewQuestionCard = ({
           {q.question_image && (
             <img
               src={q.question_image}
-              alt="Question"
+              alt={`Hình minh họa câu hỏi ${actualIndex + 1}`}
               className="mt-2 max-h-32 rounded-lg border"
             />
           )}
@@ -64,6 +64,7 @@ export const ReviewQuestionCard = ({
                     : 'bg-muted-foreground/20 text-muted-foreground hover:bg-primary/20 hover:text-primary'
                   }`}
                 title={isCorrect ? 'Click để bỏ chọn' : 'Click để chọn làm đáp án đúng'}
+                aria-label={`${isCorrect ? 'Bỏ chọn' : 'Chọn'} đáp án ${letter} cho câu hỏi ${actualIndex + 1}`}
               >
                 {isCorrect ? <Check className="w-4 h-4" /> : letter}
               </button>

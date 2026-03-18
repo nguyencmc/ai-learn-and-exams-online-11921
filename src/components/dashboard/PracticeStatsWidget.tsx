@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePracticeStats } from '@/features/practice/hooks/usePracticeStats';
@@ -16,7 +17,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-export const PracticeStatsWidget = () => {
+export const PracticeStatsWidget = memo(() => {
   const { user } = useAuth();
   const { stats, loading, refetch } = usePracticeStats();
 
@@ -89,7 +90,13 @@ export const PracticeStatsWidget = () => {
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">Tiến độ 7 ngày gần nhất</CardDescription>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => refetch()} className="h-8 w-8 p-0 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetch()}
+            className="h-8 w-8 p-0 flex-shrink-0"
+            aria-label="Làm mới thống kê luyện thi"
+          >
             <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
           </Button>
         </div>
@@ -181,4 +188,6 @@ export const PracticeStatsWidget = () => {
       </CardContent>
     </Card>
   );
-};
+});
+
+PracticeStatsWidget.displayName = 'PracticeStatsWidget';

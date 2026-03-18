@@ -283,7 +283,7 @@ export const CourseCertificate = ({
                   </div>
                   <div className="text-center">
                     <div className="w-24 h-24 mx-auto mb-1">
-                      <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                      <img src="/logo.png" alt="Logo AI-Exam.cloud" className="w-full h-full object-contain" />
                     </div>
                     <p className="text-xs font-semibold">AI-Exam.cloud</p>
                   </div>

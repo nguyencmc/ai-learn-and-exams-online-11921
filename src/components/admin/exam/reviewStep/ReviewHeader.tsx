@@ -31,7 +31,7 @@ export const ReviewHeader = ({
             </p>
             <img
               src={thumbnailUrl}
-              alt="Thumbnail"
+              alt="Ảnh bìa đề thi"
               className="w-full max-w-md h-40 object-cover rounded-lg border"
             />
           </div>
