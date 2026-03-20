@@ -136,6 +136,14 @@ export default function AttemptDetail() {
     return labels[option] || option;
   };
 
+  const getQuestionStateClass = (userAnswer: string | undefined, correctAnswer: string) => {
+    if (!userAnswer) return "bg-muted text-muted-foreground hover:bg-muted/80";
+    if (userAnswer === correctAnswer) {
+      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25";
+    }
+    return "bg-red-500/15 text-red-700 dark:text-red-400 hover:bg-red-500/25";
+  };
+
   const answers = (attempt?.answers as Record<string, string>) || {};
 
   if (!attemptLoading && !attempt) {
@@ -165,9 +173,9 @@ export default function AttemptDetail() {
   // Calculate stats
   const total = attempt?.total_questions || 0;
   const correct = attempt?.correct_answers || 0;
-  const answeredCount = Object.keys(answers).length;
-  const unanswered = total - answeredCount;
-  const wrong = answeredCount - correct;
+  const answeredCount = Math.min(Object.keys(answers).length, total);
+  const unanswered = Math.max(total - answeredCount, 0);
+  const wrong = Math.max(answeredCount - correct, 0);
   const scorePercent = attempt?.score || 0;
   const isPassed = scorePercent >= PASS_THRESHOLD;
 
@@ -255,8 +263,8 @@ export default function AttemptDetail() {
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border/50 shadow-sm">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 h-14">
-          <div className="flex items-center gap-3">
+        <div className="max-w-[1400px] mx-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-2.5 sm:h-14">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <Button
               variant="ghost"
               size="icon"
@@ -275,28 +283,28 @@ export default function AttemptDetail() {
             </div>
           </div>
           {attempt?.exam?.slug && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 px-4 rounded-xl gap-1.5 text-xs"
+                className="h-8 px-3 sm:px-4 rounded-xl gap-1.5 text-xs flex-1 sm:flex-none"
                 onClick={() => navigate(`/exam/${attempt.exam?.slug}`)}
               >
                 <FileText className="w-3.5 h-3.5" />
-                Xem đề thi
+                <span className="truncate">Xem đề thi</span>
               </Button>
               <Button
                 size="sm"
-                className="h-8 px-4 rounded-xl gap-1.5 text-xs"
+                className="h-8 px-3 sm:px-4 rounded-xl gap-1.5 text-xs flex-1 sm:flex-none"
                 onClick={() => navigate(`/exam/${attempt.exam?.slug}/take`)}
               >
                 <RefreshCcw className="w-3.5 h-3.5" />
-                Làm lại
+                <span className="truncate">Làm lại</span>
               </Button>
               {wrongAndUnansweredQuestions.length > 0 && user && (
                 <Button
                   size="sm"
-                  className="h-8 px-4 rounded-xl gap-1.5 text-xs bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                  className="h-8 px-3 sm:px-4 rounded-xl gap-1.5 text-xs bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white flex-1 sm:flex-none"
                   onClick={handleCreatePractice}
                   disabled={creatingPractice}
                 >
@@ -305,7 +313,7 @@ export default function AttemptDetail() {
                   ) : (
                     <BookOpen className="w-3.5 h-3.5" />
                   )}
-                  Luyện tập câu sai
+                  <span className="truncate">Luyện tập câu sai</span>
                 </Button>
               )}
             </div>
@@ -320,9 +328,9 @@ export default function AttemptDetail() {
             <Skeleton className="h-[600px] rounded-2xl" />
           </div>
         ) : (
-          <div className="grid lg:grid-cols-[300px_1fr] gap-6 items-start">
+          <div className="grid lg:grid-cols-[300px_1fr] gap-4 lg:gap-6 items-start">
             {/* ── Left Column (30%): Info, Stats, grid ── */}
-            <div className="sticky top-20 bg-background rounded-2xl border border-border/50 p-5 shadow-sm space-y-6">
+            <div className="hidden lg:block sticky top-20 bg-background rounded-2xl border border-border/50 p-5 shadow-sm space-y-6">
               {/* Exam Info */}
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -384,11 +392,11 @@ export default function AttemptDetail() {
                   </div>
                   <div className="flex justify-between items-center text-xs font-semibold text-red-600 dark:text-red-400">
                     <span>Sai</span>
-                    <span>{wrong < 0 ? 0 : wrong}</span>
+                    <span>{wrong}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground">
                     <span>Chưa làm</span>
-                    <span>{unanswered < 0 ? 0 : unanswered}</span>
+                    <span>{unanswered}</span>
                   </div>
                 </div>
               </div>
@@ -401,18 +409,12 @@ export default function AttemptDetail() {
                   </p>
                   <span className="text-xs font-semibold">{total} câu</span>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 gap-2">
                   {questions?.map((q, idx) => {
                     const userAnswer = answers[q.id];
-                    const isCorrect = userAnswer === q.correct_answer;
                     const isActive = selectedQuestionIndex === idx;
 
-                    let bgClass = "bg-muted text-muted-foreground hover:bg-muted/80"; // Unanswered
-                    if (userAnswer) {
-                      bgClass = isCorrect
-                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25"
-                        : "bg-red-500/15 text-red-700 dark:text-red-400 hover:bg-red-500/25";
-                    }
+                    const bgClass = getQuestionStateClass(userAnswer, q.correct_answer);
 
                     return (
                       <button
@@ -438,10 +440,92 @@ export default function AttemptDetail() {
             </div>
 
             {/* ── Right Column (70%): Details ── */}
-            <div className="bg-background rounded-2xl border border-border/50 shadow-sm min-h-[600px]">
+            <div className="space-y-4">
+              <div className="lg:hidden bg-background rounded-2xl border border-border/50 shadow-sm p-4 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div
+                    className={`flex-1 px-3 py-2.5 rounded-xl border ${
+                      isPassed
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                        : "bg-orange-500/10 border-orange-500/20 text-orange-600 dark:text-orange-400"
+                    }`}
+                  >
+                    <div className="text-xl font-black leading-none">{scorePercent}%</div>
+                    <div className="text-[10px] font-bold tracking-wide mt-1 flex items-center gap-1">
+                      {isPassed ? (
+                        <>
+                          <CheckCircle2 className="w-3 h-3" /> ĐẠT
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-3 h-3" /> CHƯA ĐẠT
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 text-center flex-1">
+                    <div className="rounded-lg bg-emerald-500/10 py-2">
+                      <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{correct}</div>
+                      <div className="text-[10px] text-muted-foreground">Đúng</div>
+                    </div>
+                    <div className="rounded-lg bg-red-500/10 py-2">
+                      <div className="text-sm font-bold text-red-600 dark:text-red-400">{wrong}</div>
+                      <div className="text-[10px] text-muted-foreground">Sai</div>
+                    </div>
+                    <div className="rounded-lg bg-muted py-2">
+                      <div className="text-sm font-bold">{unanswered}</div>
+                      <div className="text-[10px] text-muted-foreground">Chưa làm</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
+                    {attempt?.completed_at &&
+                      format(new Date(attempt.completed_at), "dd/MM/yyyy HH:mm", { locale: vi })}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    {formatDuration(attempt?.time_spent_seconds || 0)}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground/70 uppercase">
+                      Danh sách câu hỏi
+                    </p>
+                    <span className="text-xs font-semibold">{total} câu</span>
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
+                    {questions?.map((q, idx) => {
+                      const userAnswer = answers[q.id];
+                      const bgClass = getQuestionStateClass(userAnswer, q.correct_answer);
+                      const isActive = selectedQuestionIndex === idx;
+
+                      return (
+                        <button
+                          key={q.id}
+                          onClick={() => setSelectedQuestionIndex(idx)}
+                          className={`h-10 min-w-10 px-2 rounded-lg flex items-center justify-center text-xs font-bold border transition-all snap-start ${
+                            isActive
+                              ? "border-primary shadow-md opacity-100"
+                              : "border-transparent opacity-80"
+                          } ${bgClass}`}
+                        >
+                          {idx + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-background rounded-2xl border border-border/50 shadow-sm min-h-[600px]">
               {!currentQuestion ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Chọn câu hỏi bên trái để xem chi tiết
+                  Chọn một câu hỏi để xem chi tiết
                 </div>
               ) : (
                 <div className="flex flex-col h-full">
@@ -564,6 +648,7 @@ export default function AttemptDetail() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
           </div>
         )}
