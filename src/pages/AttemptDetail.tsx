@@ -21,6 +21,7 @@ import {
   MinusCircle,
   BookOpen,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -63,6 +64,7 @@ export default function AttemptDetail() {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
   const [creatingPractice, setCreatingPractice] = useState(false);
+  const [isMobileQuestionListOpen, setIsMobileQuestionListOpen] = useState(false);
 
   const { data: attempt, isLoading: attemptLoading } = useQuery({
     queryKey: ["attempt", attemptId],
@@ -492,33 +494,50 @@ export default function AttemptDetail() {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileQuestionListOpen((prev) => !prev)}
+                    className="w-full flex items-center justify-between mb-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-2"
+                    aria-expanded={isMobileQuestionListOpen}
+                  >
                     <p className="text-[10px] font-bold tracking-widest text-muted-foreground/70 uppercase">
                       Danh sách câu hỏi
                     </p>
-                    <span className="text-xs font-semibold">{total} câu</span>
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
-                    {questions?.map((q, idx) => {
-                      const userAnswer = answers[q.id];
-                      const bgClass = getQuestionStateClass(userAnswer, q.correct_answer);
-                      const isActive = selectedQuestionIndex === idx;
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold">{total} câu</span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-muted-foreground transition-transform ${
+                          isMobileQuestionListOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
+                  </button>
+                  {isMobileQuestionListOpen && (
+                    <div className="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto pr-1">
+                      {questions?.map((q, idx) => {
+                        const userAnswer = answers[q.id];
+                        const bgClass = getQuestionStateClass(userAnswer, q.correct_answer);
+                        const isActive = selectedQuestionIndex === idx;
 
-                      return (
-                        <button
-                          key={q.id}
-                          onClick={() => setSelectedQuestionIndex(idx)}
-                          className={`h-10 min-w-10 px-2 rounded-lg flex items-center justify-center text-xs font-bold border transition-all snap-start ${
-                            isActive
-                              ? "border-primary shadow-md opacity-100"
-                              : "border-transparent opacity-80"
-                          } ${bgClass}`}
-                        >
-                          {idx + 1}
-                        </button>
-                      );
-                    })}
-                  </div>
+                        return (
+                          <button
+                            key={q.id}
+                            onClick={() => {
+                              setSelectedQuestionIndex(idx);
+                              setIsMobileQuestionListOpen(false);
+                            }}
+                            className={`h-10 rounded-lg flex items-center justify-center text-xs font-bold border transition-all ${
+                              isActive
+                                ? "border-primary shadow-md opacity-100"
+                                : "border-transparent opacity-80"
+                            } ${bgClass}`}
+                          >
+                            {idx + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
