@@ -215,24 +215,47 @@ const StudentDashboard = () => {
   if (!user) {
     return (
       <main className="container mx-auto px-4 py-16 text-center">
-        <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg">
+          <BookOpen className="w-10 h-10 text-white" />
+        </div>
         <h1 className="text-2xl font-bold mb-2">Đăng nhập để xem Dashboard</h1>
         <p className="text-muted-foreground mb-6">
           Theo dõi tiến độ học tập và thống kê cá nhân của bạn
         </p>
         <Link to="/auth">
-          <Button size="lg">Đăng nhập ngay</Button>
+          <Button size="lg" className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white border-0 shadow-md">
+            Đăng nhập ngay
+          </Button>
         </Link>
       </main>
     );
   }
 
-  // Loading
+  // Loading skeleton
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-2 hidden lg:block">
+            <div className="space-y-2">
+              {[...Array(7)].map((_, i) => (
+                <div key={i} className="h-10 rounded-xl bg-muted/40 animate-pulse" style={{ animationDelay: `${i * 0.05}s` }} />
+              ))}
+            </div>
+          </div>
+          <div className="lg:col-span-6 space-y-4">
+            <div className="h-28 rounded-2xl bg-muted/40 animate-pulse" />
+            <div className="grid grid-cols-4 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-24 rounded-xl bg-muted/40 animate-pulse" style={{ animationDelay: `${i * 0.05}s` }} />
+              ))}
+            </div>
+            <div className="h-56 rounded-xl bg-muted/40 animate-pulse" />
+          </div>
+          <div className="lg:col-span-4 space-y-4">
+            <div className="h-48 rounded-2xl bg-muted/40 animate-pulse" />
+            <div className="h-32 rounded-xl bg-muted/40 animate-pulse" />
+          </div>
         </div>
       </div>
     );
@@ -240,51 +263,63 @@ const StudentDashboard = () => {
 
   return (
     <>
-      <main className="container mx-auto px-4 py-6 overflow-x-hidden">
-      {/* Header - Hide on mobile when not on overview */}
+      <main className="container mx-auto px-4 py-6 overflow-x-hidden dashboard-root">
+        {/* Header */}
         <div className={cn(
-          "flex items-center justify-between gap-4 mb-6",
+          "flex items-center justify-between gap-4 mb-6 animate-fade-slide-up",
           activeSection !== 'overview' && "hidden lg:flex"
         )}>
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
-              <BarChart3 className="w-7 h-7 text-primary flex-shrink-0" />
-              <span className="truncate">Dashboard</span>
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center flex-shrink-0 shadow-md">
+                <BarChart3 className="w-5 h-5 text-white" />
+              </div>
+              <span className="db-shimmer-text">Dashboard</span>
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1 ml-12">
               Theo dõi tiến độ học tập của bạn
             </p>
           </div>
           {(isAdmin || isTeacher) && (
             <Link to={isAdmin ? "/admin" : "/teacher"}>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 transition-all"
+              >
                 {isAdmin ? 'Admin Panel' : 'Teacher Panel'}
               </Button>
             </Link>
           )}
         </div>
 
-        {/* 3-Column Layout: 2/6/4 ratio */}
+        {/* 3-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column - Sidebar Navigation (2/12 = ~16.6%) */}
+          {/* Left Sidebar */}
           <div className="lg:col-span-2 hidden lg:block">
             <div className="sticky top-24">
-              <DashboardSidebar 
-                activeSection={activeSection} 
+              <DashboardSidebar
+                activeSection={activeSection}
                 onSectionChange={handleSectionChange}
               />
             </div>
           </div>
 
-          {/* Middle Column - Main Content (6/12 = 50%) */}
+          {/* Main Content */}
           <div className="lg:col-span-6 pb-24 lg:pb-0">
-            {/* Section Content */}
-            <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted/30" />}>
+            <Suspense fallback={
+              <div className="space-y-4">
+                <div className="h-28 rounded-2xl bg-muted/30 animate-pulse" />
+                <div className="grid grid-cols-4 gap-3">
+                  {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-muted/30 animate-pulse" />)}
+                </div>
+              </div>
+            }>
               {renderedSectionContent}
             </Suspense>
           </div>
 
-          {/* Right Column - Suggestions (4/12 = ~33.3%) */}
+          {/* Right Column - Suggestions */}
           <div className="lg:col-span-4">
             <div className="sticky top-24">
               <DashboardSuggestions
@@ -298,14 +333,15 @@ const StudentDashboard = () => {
           </div>
         </div>
       </main>
-      
-      <MobileBottomNav 
-        activeSection={activeSection} 
+
+      <MobileBottomNav
+        activeSection={activeSection}
         onSectionChange={handleSectionChange}
       />
       <AITutorButton />
     </>
   );
+
 };
 
 export default StudentDashboard;

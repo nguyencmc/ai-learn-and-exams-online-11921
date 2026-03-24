@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { Button } from '@/components/ui/button';
 import { RealtimeNotifications } from '@/components/admin/RealtimeNotifications';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AdminMobileBottomNav } from '@/components/admin/AdminMobileBottomNav';
 import {
   Users,
   Shield,
@@ -22,10 +22,10 @@ import { AdminSystemTab } from '@/features/admin/components/AdminSystemTab';
 import type { AdminTab } from '@/features/admin/types';
 
 const sidebarItems = [
-  { id: 'overview' as const, label: 'Monitoring', icon: Activity, color: 'text-primary' },
-  { id: 'users' as const, label: 'Người dùng', icon: Users, color: 'text-blue-500' },
-  { id: 'content' as const, label: 'Nội dung', icon: FolderOpen, color: 'text-orange-500' },
-  { id: 'system' as const, label: 'Hệ thống', icon: Settings, color: 'text-gray-500' },
+  { id: 'overview' as const, label: 'Monitoring',  icon: Activity,    color: 'text-teal-400'    },
+  { id: 'users'    as const, label: 'Người dùng',  icon: Users,       color: 'text-cyan-400'    },
+  { id: 'content'  as const, label: 'Nội dung',    icon: FolderOpen,  color: 'text-emerald-400' },
+  { id: 'system'   as const, label: 'Hệ thống',    icon: Settings,    color: 'text-slate-400'   },
 ];
 
 const AdminDashboard = () => {
@@ -64,21 +64,37 @@ const AdminDashboard = () => {
     }
   }, [isAdmin, fetchAllData]);
 
+  // Loading skeleton
   if (roleLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Sidebar skeleton */}
+            <div className="hidden lg:block lg:col-span-2">
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-10 rounded-xl bg-muted/40 animate-pulse" style={{ animationDelay: `${i * 0.07}s` }} />
+                ))}
+              </div>
+            </div>
+            {/* Content skeleton */}
+            <div className="lg:col-span-10 space-y-4">
+              <div className="h-28 rounded-2xl bg-muted/40 animate-pulse" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-24 rounded-xl bg-muted/40 animate-pulse" style={{ animationDelay: `${i * 0.07}s` }} />
+                ))}
+              </div>
+              <div className="h-64 rounded-xl bg-muted/40 animate-pulse" />
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!isAdmin) {
-    return null;
-  }
+  if (!isAdmin) return null;
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -118,68 +134,87 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-6 pb-24 lg:pb-8">
+      <main className="container mx-auto px-4 py-6 pb-28 lg:pb-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-red-500" />
+        <div className="flex items-center justify-between gap-3 mb-6 animate-fade-slide-up">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center shadow-md"
+              style={{ backgroundImage: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)' }}>
+              <Shield className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Monitoring & Quản lý hệ thống</p>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                <span className="db-shimmer-text" style={{
+                  background: 'linear-gradient(90deg, #2dd4bf 0%, #0d9488 40%, #2dd4bf 100%)',
+                  backgroundSize: '200% auto',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  animation: 'shimmer 3s linear infinite',
+                }}>
+                  Admin Dashboard
+                </span>
+              </h1>
+              <p className="text-xs text-muted-foreground hidden sm:block">Monitoring &amp; Quản lý hệ thống</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Header actions */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <RealtimeNotifications />
             <Button
               variant="outline"
               size="sm"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="gap-2"
+              className="gap-2 border-teal-500/20 text-teal-400 hover:bg-teal-500/10 hover:text-teal-300 transition-all"
             >
               <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-              Làm mới
+              <span className="hidden sm:inline">Làm mới</span>
             </Button>
           </div>
         </div>
 
-        {/* Tabs Navigation */}
+        {/* Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Sidebar - Desktop */}
-          <div className="hidden lg:block lg:col-span-2">
-            <nav className="space-y-1 sticky top-24">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                    activeTab === item.id
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <item.icon className={cn("w-5 h-5", activeTab === item.id ? item.color : "")} />
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </div>
 
-          {/* Mobile Tabs */}
-          <div className="lg:hidden">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as AdminTab)}>
-              <TabsList className="grid w-full grid-cols-4">
-                {sidebarItems.map((item) => (
-                  <TabsTrigger key={item.id} value={item.id} className="text-xs px-2">
-                    <item.icon className="w-4 h-4 sm:mr-1" />
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block lg:col-span-2">
+            <nav className="space-y-0.5 sticky top-24 bg-card rounded-2xl border border-border/40 p-2 shadow-sm">
+              <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-3 pt-2 pb-1.5">
+                Navigation
+              </p>
+              {sidebarItems.map((item, i) => {
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={cn(
+                      'animate-fade-slide-up w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group',
+                      `stagger-${Math.min(i + 1, 6)}`,
+                      isActive
+                        ? 'text-white shadow-md db-nav-active-bar'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:translate-x-0.5'
+                    )}
+                    style={isActive ? {
+                      backgroundImage: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                    } : undefined}
+                  >
+                    <div className={cn(
+                      'w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all',
+                      isActive ? 'bg-white/20' : 'bg-transparent group-hover:bg-accent'
+                    )}>
+                      <item.icon className={cn('w-4 h-4', isActive ? 'text-white' : item.color)} />
+                    </div>
+                    <span className="truncate">{item.label}</span>
+                    {isActive && (
+                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white/70" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
 
           {/* Main Content */}
@@ -188,6 +223,9 @@ const AdminDashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <AdminMobileBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 };

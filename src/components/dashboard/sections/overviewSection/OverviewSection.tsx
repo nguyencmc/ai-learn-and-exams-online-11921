@@ -8,7 +8,8 @@ import {
   Sun,
   Moon,
   Sunrise,
-  Flame
+  Flame,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useOverviewData } from './useOverviewData';
@@ -35,19 +36,21 @@ function WeeklyChart({ weeklyProgress }: { weeklyProgress: WeeklyProgress[] }) {
   });
 
   return (
-    <Card className="border-border/50">
-      <CardHeader>
+    <Card className="border-border/40 animate-fade-slide-up stagger-5">
+      <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Calendar className="w-5 h-5" />
+          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+            <Calendar className="w-4 h-4 text-indigo-400" />
+          </div>
           Hoạt động tuần này
         </CardTitle>
-        <CardDescription>Thời gian học tập theo ngày (giờ)</CardDescription>
+        <CardDescription className="text-xs">Thời gian học tập theo ngày (giờ)</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex gap-3">
           <div className="flex flex-col justify-between h-40 py-1 pr-1 text-right min-w-[28px]">
             {yAxisLabels.map((val, i) => (
-              <span key={i} className="text-[10px] text-muted-foreground leading-none">
+              <span key={i} className="text-[10px] text-muted-foreground/60 leading-none">
                 {parseFloat(val) % 1 === 0 ? parseInt(val) : val}
               </span>
             ))}
@@ -55,7 +58,7 @@ function WeeklyChart({ weeklyProgress }: { weeklyProgress: WeeklyProgress[] }) {
           <div className="flex-1 relative">
             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
               {yAxisLabels.map((_, i) => (
-                <div key={i} className={cn("w-full border-t", i === yAxisLabels.length - 1 ? "border-border" : "border-border/30 border-dashed")} />
+                <div key={i} className={cn('w-full border-t', i === yAxisLabels.length - 1 ? 'border-border/40' : 'border-border/20 border-dashed')} />
               ))}
             </div>
             <div className="relative flex items-end justify-between gap-2 h-40">
@@ -66,11 +69,20 @@ function WeeklyChart({ weeklyProgress }: { weeklyProgress: WeeklyProgress[] }) {
                   <div key={day.day} className="flex-1 flex flex-col items-center z-10">
                     <div className="w-full flex flex-col items-center justify-end h-40">
                       <div
-                        className={cn("w-full max-w-10 rounded-t-md transition-all relative group", isToday ? 'bg-primary' : 'bg-primary/40', day.hours > 0 && "hover:opacity-80 cursor-pointer")}
-                        style={{ height: `${Math.max(height, 2)}%` }}
+                        className={cn(
+                          'w-full max-w-10 rounded-t-lg transition-all relative group',
+                          day.hours > 0 && 'hover:opacity-90 cursor-pointer'
+                        )}
+                        style={{
+                          height: `${Math.max(height, 2)}%`,
+                          background: isToday
+                            ? 'linear-gradient(180deg, #818cf8 0%, #6366f1 100%)'
+                            : 'linear-gradient(180deg, #6366f133 0%, #6366f122 100%)',
+                          boxShadow: isToday && day.hours > 0 ? '0 0 10px rgba(99,102,241,0.3)' : 'none',
+                        }}
                       >
                         {day.hours > 0 && (
-                          <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                          <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover border border-border/40 text-popover-foreground text-xs px-2 py-1 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
                             {day.hours.toFixed(1)}h
                           </div>
                         )}
@@ -82,7 +94,7 @@ function WeeklyChart({ weeklyProgress }: { weeklyProgress: WeeklyProgress[] }) {
             </div>
           </div>
         </div>
-        <div className="flex gap-3 mt-2">
+        <div className="flex gap-3 mt-3">
           <div className="min-w-[28px]" />
           <div className="flex-1 flex justify-between">
             {weeklyProgress.map((day, index) => {
@@ -90,8 +102,13 @@ function WeeklyChart({ weeklyProgress }: { weeklyProgress: WeeklyProgress[] }) {
               const hours = day.attempts * 0.25;
               return (
                 <div key={day.day} className="flex-1 text-center">
-                  <span className={cn("text-xs block", isToday ? 'font-bold text-primary' : 'text-muted-foreground')}>{day.day}</span>
-                  <span className="text-[10px] text-muted-foreground">{hours > 0 ? `${hours.toFixed(1)}h` : '-'}</span>
+                  <span className={cn(
+                    'text-xs block font-medium',
+                    isToday ? 'text-indigo-400' : 'text-muted-foreground/60'
+                  )}>{day.day}</span>
+                  {hours > 0 && (
+                    <span className="text-[9px] text-muted-foreground/50">{hours.toFixed(1)}h</span>
+                  )}
                 </div>
               );
             })}
@@ -112,47 +129,96 @@ export function OverviewSection({
   const greeting = getGreeting();
   const GreetingIcon = greeting.icon;
   const { continueLearning, displayName } = useOverviewData();
+  const streakDays = weeklyProgress.filter(d => d.attempts > 0).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Greeting Card */}
-      <Card className="border-border/50 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-        <CardContent className="p-5 relative">
+      <div
+        className="relative rounded-2xl overflow-hidden animate-fade-slide-up stagger-1"
+        style={{
+          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #9333ea 100%)',
+        }}
+      >
+        {/* Decorative circles */}
+        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />
+        <div className="absolute -bottom-10 -left-6 w-32 h-32 rounded-full bg-white/5" />
+        <div className="absolute top-3 right-16 w-6 h-6 rounded-full bg-white/10" />
+
+        <div className="relative p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-white/70">
                 <GreetingIcon className="w-4 h-4" />
                 <span className="text-sm">{greeting.text}</span>
               </div>
-              <h2 className="text-2xl font-bold text-foreground">{displayName}! 👋</h2>
-              <p className="text-sm text-muted-foreground">🚀 Hãy tiếp tục hành trình học tập của bạn!</p>
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                {displayName}! 
+                <span className="animate-[wave_1.5s_ease-in-out_infinite]">👋</span>
+              </h2>
+              <p className="text-sm text-white/60 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                Hãy tiếp tục hành trình học tập của bạn!
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="text-right">
-                <div className="flex items-center gap-1.5">
-                  <Flame className="w-5 h-5 text-orange-500" />
-                  <span className="text-2xl font-bold">{weeklyProgress.filter(d => d.attempts > 0).length}</span>
+            {streakDays > 0 && (
+              <div className="flex-shrink-0 text-right">
+                <div className="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
+                  <div className="flex items-center gap-1.5 justify-end">
+                    <Flame className="w-5 h-5 text-orange-300" style={{ animation: 'flamePulse 1.5s ease-in-out infinite' }} />
+                    <span className="text-2xl font-bold text-white">{streakDays}</span>
+                  </div>
+                  <p className="text-xs text-white/60 mt-0.5">ngày streak</p>
                 </div>
-                <p className="text-xs text-muted-foreground">ngày streak</p>
               </div>
-            </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <QuickActions />
-      <RecentActivity continueLearning={continueLearning} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={Trophy} value={stats.points.toLocaleString()} label="Điểm" gradientFrom="from-primary/5" iconColor="text-primary" bgColor="bg-primary/10" />
-        <StatCard icon={Target} value={`${accuracy}%`} label="Độ chính xác" gradientFrom="from-green-500/5" iconColor="text-green-500" bgColor="bg-green-500/10" />
-        <StatCard icon={CheckCircle2} value={stats.totalExamsTaken} label="Đề đã làm" gradientFrom="from-purple-500/5" iconColor="text-purple-500" bgColor="bg-purple-500/10" />
-        <StatCard icon={TrendingUp} value={stats.totalQuestionsAnswered} label="Tổng câu hỏi" gradientFrom="from-blue-500/5" iconColor="text-blue-500" bgColor="bg-blue-500/10" />
+        <StatCard
+          icon={Trophy}
+          value={stats.points.toLocaleString()}
+          label="Điểm XP"
+          gradientFrom="from-indigo-500/8"
+          iconColor="text-indigo-400"
+          bgColor="bg-indigo-500/10"
+          delay="0.05s"
+        />
+        <StatCard
+          icon={Target}
+          value={`${accuracy}%`}
+          label="Độ chính xác"
+          gradientFrom="from-emerald-500/8"
+          iconColor="text-emerald-400"
+          bgColor="bg-emerald-500/10"
+          delay="0.10s"
+        />
+        <StatCard
+          icon={CheckCircle2}
+          value={stats.totalExamsTaken}
+          label="Đề đã làm"
+          gradientFrom="from-violet-500/8"
+          iconColor="text-violet-400"
+          bgColor="bg-violet-500/10"
+          delay="0.15s"
+        />
+        <StatCard
+          icon={TrendingUp}
+          value={stats.totalQuestionsAnswered}
+          label="Tổng câu hỏi"
+          gradientFrom="from-blue-500/8"
+          iconColor="text-blue-400"
+          bgColor="bg-blue-500/10"
+          delay="0.20s"
+        />
       </div>
 
+      <RecentActivity continueLearning={continueLearning} />
       <WeeklyChart weeklyProgress={weeklyProgress} />
     </div>
   );
