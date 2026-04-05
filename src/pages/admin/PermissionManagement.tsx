@@ -48,6 +48,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   flashcards: 'Flashcard',
   question_sets: 'Bộ câu hỏi',
   categories: 'Danh mục',
+  library: 'Thư viện cá nhân',
 };
 
 const PermissionManagement = () => {

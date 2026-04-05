@@ -5,6 +5,7 @@ const ArticleModerationPage = lazy(() => import("@/features/articles/pages/Artic
 
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const TeacherDashboard = lazy(() => import("@/pages/admin/TeacherDashboard"));
+const TeacherLibraryPage = lazy(() => import("@/features/teacherLibrary/pages/TeacherLibraryPage"));
 const ExamManagement = lazy(() => import("@/pages/admin/ExamManagement"));
 const ExamEditor = lazy(() => import("@/pages/admin/ExamEditor"));
 const FlashcardManagement = lazy(() => import("@/pages/admin/FlashcardManagement"));
@@ -27,6 +28,7 @@ export const adminRoutes = (
     <Route path="/admin" element={<AdminDashboard />} />
     <Route path="/admin/articles" element={<ArticleModerationPage />} />
     <Route path="/teacher" element={<TeacherDashboard />} />
+    <Route path="/teacher/library" element={<TeacherLibraryPage />} />
     <Route path="/admin/users" element={<UserManagement />} />
     <Route path="/admin/permissions" element={<PermissionManagement />} />
     <Route path="/admin/audit-logs" element={<AuditLogs />} />

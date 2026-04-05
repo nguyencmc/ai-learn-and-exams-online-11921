@@ -13,11 +13,16 @@ import {
   TrendingUp,
   BarChart3,
   FolderOpen,
+  Users2,
+  UserCheck,
+  Library,
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
 import { useTeacherData } from '@/features/admin/hooks/useTeacherData';
 import { TeacherOverviewTab } from '@/features/admin/components/TeacherOverviewTab';
+import { TeacherClassesTab } from '@/features/admin/components/TeacherClassesTab';
+import { TeacherStudentsTab } from '@/features/admin/components/TeacherStudentsTab';
 import { TeacherCoursesTab } from '@/features/admin/components/TeacherCoursesTab';
 import { TeacherExamsTab } from '@/features/admin/components/TeacherExamsTab';
 import { TeacherContentTab } from '@/features/admin/components/TeacherContentTab';
@@ -25,11 +30,14 @@ import { TeacherAnalyticsTab } from '@/features/admin/components/TeacherAnalytic
 import type { DashboardTab } from '@/features/admin/types';
 
 const sidebarItems = [
-  { id: 'overview'  as const, label: 'Tổng quan', icon: BarChart3,     color: 'text-indigo-400' },
-  { id: 'courses'   as const, label: 'Khóa học',  icon: GraduationCap, color: 'text-cyan-400' },
-  { id: 'exams'     as const, label: 'Đề thi',    icon: FileText,      color: 'text-violet-400' },
-  { id: 'content'   as const, label: 'Nội dung',  icon: FolderOpen,    color: 'text-amber-400' },
-  { id: 'analytics' as const, label: 'Phân tích', icon: TrendingUp,    color: 'text-emerald-400' },
+  { id: 'overview'  as const, label: 'Tổng quan',  icon: BarChart3,     color: 'text-indigo-400',  href: undefined },
+  { id: 'classes'   as const, label: 'Lớp học',    icon: Users2,        color: 'text-blue-400',    href: undefined },
+  { id: 'students'  as const, label: 'Học sinh',   icon: UserCheck,     color: 'text-teal-400',    href: undefined },
+  { id: 'courses'   as const, label: 'Khóa học',   icon: GraduationCap, color: 'text-cyan-400',    href: undefined },
+  { id: 'exams'     as const, label: 'Đề thi',     icon: FileText,      color: 'text-violet-400',  href: undefined },
+  { id: 'content'   as const, label: 'Nội dung',   icon: FolderOpen,    color: 'text-amber-400',   href: undefined },
+  { id: 'analytics' as const, label: 'Phân tích',  icon: TrendingUp,    color: 'text-emerald-400', href: undefined },
+  { id: 'library'   as const, label: 'Thư viện',   icon: Library,       color: 'text-purple-400',  href: '/teacher/library' },
 ];
 
 const TeacherDashboard = () => {
@@ -49,7 +57,7 @@ const TeacherDashboard = () => {
   const canCreateFlashcards = hasPermission('flashcards.create');
   const canCreatePodcasts = hasPermission('podcasts.create');
 
-  const { stats, recentItems, myCourses, loading, fetchData } = useTeacherData(user?.id);
+  const { stats, recentItems, myCourses, myClasses, myStudents, loading, fetchData } = useTeacherData(user?.id);
 
   useEffect(() => {
     if (!roleLoading && !hasAccess) {
@@ -68,7 +76,6 @@ const TeacherDashboard = () => {
     }
   }, [hasAccess, user, fetchData]);
 
-  // Loading skeleton
   if (roleLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -76,7 +83,7 @@ const TeacherDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="hidden lg:block lg:col-span-2">
               <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
+                {[...Array(7)].map((_, i) => (
                   <div key={i} className="h-10 rounded-xl bg-muted/40 animate-pulse" style={{ animationDelay: `${i * 0.07}s` }} />
                 ))}
               </div>
@@ -98,10 +105,10 @@ const TeacherDashboard = () => {
   if (!hasAccess) return null;
 
   const quickCreateItems = [
-    { label: 'Khóa học mới', icon: GraduationCap, href: '/admin/courses/create',   color: 'bg-cyan-500',    enabled: canCreateCourses },
-    { label: 'Đề thi mới',   icon: FileText,      href: '/admin/exams/create',     color: 'bg-purple-500',  enabled: canCreateExams },
-    { label: 'Flashcard',    icon: Layers,         href: '/admin/flashcards/create',color: 'bg-orange-500',  enabled: canCreateFlashcards },
-    { label: 'Podcast',      icon: Headphones,     href: '/admin/podcasts/create',  color: 'bg-pink-500',    enabled: canCreatePodcasts },
+    { label: 'Khóa học mới', icon: GraduationCap, href: '/admin/courses/create',    color: 'bg-cyan-500',   enabled: canCreateCourses },
+    { label: 'Đề thi mới',   icon: FileText,      href: '/admin/exams/create',      color: 'bg-purple-500', enabled: canCreateExams },
+    { label: 'Flashcard',    icon: Layers,         href: '/admin/flashcards/create', color: 'bg-orange-500', enabled: canCreateFlashcards },
+    { label: 'Podcast',      icon: Headphones,     href: '/admin/podcasts/create',   color: 'bg-pink-500',   enabled: canCreatePodcasts },
   ];
 
   const renderTabContent = () => {
@@ -113,6 +120,20 @@ const TeacherDashboard = () => {
             recentItems={recentItems}
             loading={loading}
             quickCreateItems={quickCreateItems}
+            myClasses={myClasses}
+            myStudents={myStudents}
+            onGoToTab={setActiveTab}
+          />
+        );
+      case 'classes':
+        return <TeacherClassesTab myClasses={myClasses} loading={loading} />;
+      case 'students':
+        return (
+          <TeacherStudentsTab
+            myStudents={myStudents}
+            myClasses={myClasses}
+            myCourses={myCourses}
+            loading={loading}
           />
         );
       case 'courses':
@@ -122,7 +143,9 @@ const TeacherDashboard = () => {
       case 'content':
         return <TeacherContentTab stats={stats} />;
       case 'analytics':
-        return <TeacherAnalyticsTab stats={stats} myCourses={myCourses} />;
+        return <TeacherAnalyticsTab stats={stats} myCourses={myCourses} myStudents={myStudents} />;
+      case 'library':
+        return <TeacherContentTab stats={stats} />;
       default:
         return (
           <TeacherOverviewTab
@@ -130,6 +153,8 @@ const TeacherDashboard = () => {
             recentItems={recentItems}
             loading={loading}
             quickCreateItems={quickCreateItems}
+            myClasses={myClasses}
+            myStudents={myStudents}
           />
         );
     }
@@ -151,7 +176,7 @@ const TeacherDashboard = () => {
               <h1 className="text-xl sm:text-2xl font-bold db-shimmer-text">
                 Teacher Dashboard
               </h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">Tạo và quản lý nội dung học tập</p>
+              <p className="text-xs text-muted-foreground hidden sm:block">Quản lý lớp học, học sinh và nội dung</p>
             </div>
           </div>
           {isAdmin && (
@@ -178,21 +203,16 @@ const TeacherDashboard = () => {
               </p>
               {sidebarItems.map((item, i) => {
                 const isActive = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={cn(
-                      'animate-fade-slide-up w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group',
-                      `stagger-${Math.min(i + 1, 6)}`,
-                      isActive
-                        ? 'text-white shadow-md db-nav-active-bar'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:translate-x-0.5'
-                    )}
-                    style={isActive ? {
-                      backgroundImage: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                    } : undefined}
-                  >
+                const btnClass = cn(
+                  'animate-fade-slide-up w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group',
+                  `stagger-${Math.min(i + 1, 6)}`,
+                  isActive
+                    ? 'text-white shadow-md db-nav-active-bar'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:translate-x-0.5'
+                );
+                const btnStyle = isActive ? { backgroundImage: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' } : undefined;
+                const btnInner = (
+                  <>
                     <div className={cn(
                       'w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all',
                       isActive ? 'bg-white/20' : 'bg-transparent group-hover:bg-accent'
@@ -203,6 +223,25 @@ const TeacherDashboard = () => {
                     {isActive && (
                       <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white/70" />
                     )}
+                  </>
+                );
+                return item.href ? (
+                  <Link
+                    key={item.id}
+                    to={item.href}
+                    className={btnClass}
+                    style={btnStyle}
+                  >
+                    {btnInner}
+                  </Link>
+                ) : (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={btnClass}
+                    style={btnStyle}
+                  >
+                    {btnInner}
                   </button>
                 );
               })}

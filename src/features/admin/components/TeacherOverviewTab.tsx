@@ -13,8 +13,11 @@ import {
   Clock,
   FolderOpen,
   Sparkles,
+  AlertTriangle,
+  Users2,
+  ClipboardCheck,
 } from 'lucide-react';
-import type { TeacherStats, RecentItem } from '@/features/admin/types';
+import type { TeacherStats, RecentItem, ClassWithStats, StudentSummary } from '@/features/admin/types';
 
 interface QuickCreateItem {
   label: string;
@@ -29,13 +32,15 @@ interface TeacherOverviewTabProps {
   recentItems: RecentItem[];
   loading: boolean;
   quickCreateItems: QuickCreateItem[];
+  myClasses?: ClassWithStats[];
+  myStudents?: StudentSummary[];
+  onGoToTab?: (tab: string) => void;
 }
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
   if (diffDays === 0) return 'Hôm nay';
   if (diffDays === 1) return 'Hôm qua';
   if (diffDays < 7) return `${diffDays} ngày trước`;
@@ -64,10 +69,27 @@ function getTypeColor(type: RecentItem['type']): string {
   }
 }
 
-export function TeacherOverviewTab({ stats, recentItems, loading, quickCreateItems }: TeacherOverviewTabProps) {
+function isInactive(dateString: string | null): boolean {
+  if (!dateString) return true;
+  return Math.floor((new Date().getTime() - new Date(dateString).getTime()) / (1000 * 60 * 60 * 24)) > 7;
+}
+
+export function TeacherOverviewTab({
+  stats,
+  recentItems,
+  loading,
+  quickCreateItems,
+  myClasses = [],
+  myStudents = [],
+  onGoToTab,
+}: TeacherOverviewTabProps) {
+  const inactiveStudents = myStudents.filter((s) => isInactive(s.last_activity)).length;
+  const closedClasses = myClasses.filter((c) => !c.is_active).length;
+  const totalPendingGrading = myClasses.reduce((sum, c) => sum + c.pending_grading, 0);
+  const hasAlerts = inactiveStudents > 0 || closedClasses > 0 || totalPendingGrading > 0;
+
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-border/50">
           <CardContent className="p-4">
@@ -78,6 +100,19 @@ export function TeacherOverviewTab({ stats, recentItems, loading, quickCreateIte
               <div>
                 <p className="text-2xl font-bold">{stats.totalCourses}</p>
                 <p className="text-sm text-muted-foreground">Khóa học</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                <Users2 className="w-5 h-5 text-indigo-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats.totalClasses}</p>
+                <p className="text-sm text-muted-foreground">Lớp học</p>
               </div>
             </div>
           </CardContent>
@@ -108,22 +143,64 @@ export function TeacherOverviewTab({ stats, recentItems, loading, quickCreateIte
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.totalExams}</p>
-                <p className="text-sm text-muted-foreground">Đề thi</p>
-              </div>
+      </div>
+
+      {!loading && hasAlerts && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="w-4 h-4" />
+              Cần xử lý
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {totalPendingGrading > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+                    <ClipboardCheck className="w-3.5 h-3.5 inline-block text-red-500" />
+                    {totalPendingGrading} bài tập chờ chấm
+                  </span>
+                  {onGoToTab && (
+                    <button
+                      className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium"
+                      onClick={() => onGoToTab('classes')}
+                    >
+                      Xem &rsaquo;
+                    </button>
+                  )}
+                </div>
+              )}
+              {inactiveStudents > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                    {inactiveStudents} học sinh không hoạt động 7 ngày
+                  </span>
+                  {onGoToTab && (
+                    <button
+                      className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium"
+                      onClick={() => onGoToTab('students')}
+                    >
+                      Xem &rsaquo;
+                    </button>
+                  )}
+                </div>
+              )}
+              {closedClasses > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
+                    {closedClasses} lớp học đã đóng
+                  </span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
 
-      {/* Quick Create */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -133,7 +210,7 @@ export function TeacherOverviewTab({ stats, recentItems, loading, quickCreateIte
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {quickCreateItems.filter(item => item.enabled).map((item) => (
+            {quickCreateItems.filter((item) => item.enabled).map((item) => (
               <Link key={item.href} to={item.href}>
                 <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
                   <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center`}>
@@ -147,7 +224,6 @@ export function TeacherOverviewTab({ stats, recentItems, loading, quickCreateIte
         </CardContent>
       </Card>
 
-      {/* Recent Activity */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -158,7 +234,7 @@ export function TeacherOverviewTab({ stats, recentItems, loading, quickCreateIte
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
             </div>
           ) : recentItems.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">

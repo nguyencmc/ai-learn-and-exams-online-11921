@@ -124,4 +124,34 @@ export interface CourseWithStats {
   created_at: string;
 }
 
-export type DashboardTab = 'overview' | 'courses' | 'exams' | 'content' | 'analytics';
+export type DashboardTab = 'overview' | 'classes' | 'students' | 'courses' | 'exams' | 'content' | 'analytics' | 'library';
+
+export interface ClassWithStats {
+  id: string;
+  title: string;
+  description: string | null;
+  class_code: string;
+  is_active: boolean;
+  created_at: string;
+  member_count: number;
+  total_assignments: number;
+  pending_grading: number;
+}
+
+export interface StudentSource {
+  type: 'class' | 'course';
+  name: string;
+  id: string;
+  last_activity: string | null;
+  progress: number;
+}
+
+export interface StudentSummary {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  sources: StudentSource[];
+  last_activity: string | null;
+}
