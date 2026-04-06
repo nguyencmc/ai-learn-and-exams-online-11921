@@ -177,47 +177,47 @@ const ClassDetailPage = () => {
         )}
 
         {/* ── Tabs ── */}
-        <Tabs defaultValue="library">
-          <div className="overflow-x-auto pb-1 mb-8">
-            <TabsList className="bg-muted/60 p-1 rounded-xl h-auto inline-flex gap-1 min-w-max">
+        <Tabs defaultValue="library" className="md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-8">
+          <div className="overflow-x-auto pb-1 mb-8 md:mb-0 md:overflow-visible">
+            <TabsList className="bg-muted/60 p-1 rounded-xl h-auto inline-flex gap-1 min-w-max md:min-w-0 md:w-full md:flex md:flex-col md:items-stretch">
               <TabsTrigger
                 value="library"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm md:w-full md:justify-start"
               >
                 <Library className="h-4 w-4" />
                 <span>Tài liệu</span>
               </TabsTrigger>
               <TabsTrigger
                 value="video"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm md:w-full md:justify-start"
               >
                 <Video className="h-4 w-4" />
                 <span>Video</span>
               </TabsTrigger>
               <TabsTrigger
                 value="exams"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm md:w-full md:justify-start"
               >
                 <ClipboardCheck className="h-4 w-4" />
                 <span>Bài kiểm tra</span>
               </TabsTrigger>
               <TabsTrigger
                 value="courses"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm md:w-full md:justify-start"
               >
                 <BookOpen className="h-4 w-4" />
                 <span>Khóa học</span>
               </TabsTrigger>
               <TabsTrigger
                 value="members"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm md:w-full md:justify-start"
               >
                 <Users className="h-4 w-4" />
                 <span>Thành viên</span>
               </TabsTrigger>
               <TabsTrigger
                 value="assignments"
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm"
+                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm md:w-full md:justify-start"
               >
                 <ClipboardList className="h-4 w-4" />
                 <span>Bài tập</span>
@@ -225,7 +225,7 @@ const ClassDetailPage = () => {
               {isManager && (
                 <TabsTrigger
                   value="gradebook"
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm"
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2 text-sm md:w-full md:justify-start"
                 >
                   <BarChart3 className="h-4 w-4" />
                   <span>Bảng điểm</span>
@@ -234,35 +234,37 @@ const ClassDetailPage = () => {
             </TabsList>
           </div>
 
-          <TabsContent value="library">
-            <ClassLibraryTab classId={classId!} isManager={isManager} />
-          </TabsContent>
-
-          <TabsContent value="video">
-            <VideoTab classId={classId!} isManager={isManager} />
-          </TabsContent>
-
-          <TabsContent value="exams">
-            <ExamsTab classId={classId!} isManager={isManager} />
-          </TabsContent>
-
-          <TabsContent value="courses">
-            <CoursesTab classId={classId!} isManager={isManager} />
-          </TabsContent>
-
-          <TabsContent value="members">
-            <MembersTab classId={classId!} isManager={isManager} />
-          </TabsContent>
-
-          <TabsContent value="assignments">
-            <AssignmentsTab classId={classId!} isManager={isManager} />
-          </TabsContent>
-
-          {isManager && (
-            <TabsContent value="gradebook">
-              <GradebookTab classId={classId!} />
+          <div>
+            <TabsContent value="library">
+              <ClassLibraryTab classId={classId!} isManager={isManager} />
             </TabsContent>
-          )}
+
+            <TabsContent value="video">
+              <VideoTab classId={classId!} isManager={isManager} />
+            </TabsContent>
+
+            <TabsContent value="exams">
+              <ExamsTab classId={classId!} isManager={isManager} />
+            </TabsContent>
+
+            <TabsContent value="courses">
+              <CoursesTab classId={classId!} isManager={isManager} />
+            </TabsContent>
+
+            <TabsContent value="members">
+              <MembersTab classId={classId!} isManager={isManager} />
+            </TabsContent>
+
+            <TabsContent value="assignments">
+              <AssignmentsTab classId={classId!} isManager={isManager} />
+            </TabsContent>
+
+            {isManager && (
+              <TabsContent value="gradebook">
+                <GradebookTab classId={classId!} />
+              </TabsContent>
+            )}
+          </div>
         </Tabs>
       </main>
     </div>
