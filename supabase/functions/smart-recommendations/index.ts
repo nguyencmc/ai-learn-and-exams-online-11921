@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const API_KEY = Deno.env.get('NVIDIA_API_KEY') ?? Deno.env.get('GEMINI_API_KEY');
 const GEMINI_MODEL = 'gemini-2.0-flash';
 
 serve(async (req) => {
@@ -19,8 +19,8 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not configured');
+    if (!API_KEY) {
+      throw new Error('NVIDIA_API_KEY is not configured');
     }
 
     console.log('Smart recommendations request for user:', userId);
@@ -113,7 +113,7 @@ Lưu ý:
     console.log('Calling Gemini API...');
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

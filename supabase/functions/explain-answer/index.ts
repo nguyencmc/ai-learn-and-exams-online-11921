@@ -22,10 +22,10 @@ serve(async (req) => {
       );
     }
 
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
+    const apiKey = Deno.env.get('NVIDIA_API_KEY') ?? Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'GEMINI_API_KEY chưa được cấu hình. Vui lòng liên hệ quản trị viên.' }),
+        JSON.stringify({ error: 'NVIDIA_API_KEY chưa được cấu hình. Vui lòng liên hệ quản trị viên.' }),
         { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -60,7 +60,7 @@ ${userAnswerText}
 Hãy giải thích chi tiết tại sao đáp án ${correctAnswer} là đúng.`;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

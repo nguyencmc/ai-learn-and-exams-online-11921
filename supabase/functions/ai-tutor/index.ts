@@ -15,10 +15,10 @@ serve(async (req) => {
   try {
     const { messages, context } = await req.json();
 
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
+    const apiKey = Deno.env.get('NVIDIA_API_KEY') ?? Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'GEMINI_API_KEY chưa được cấu hình. Vui lòng liên hệ quản trị viên.' }),
+        JSON.stringify({ error: 'NVIDIA_API_KEY chưa được cấu hình. Vui lòng liên hệ quản trị viên.' }),
         { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -46,7 +46,7 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn nhưng đầy đủ thông 
 
     // Use streaming endpoint
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?key=${apiKey}&alt=sse`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
